@@ -52,9 +52,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout Curso032026AudioProcessor::c
 
     parameters.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("DryWet", 1),
                                                                "DryWet",
-                                                               0.0f,
-                                                               100.0f,
-                                                               50.0f));
+                                                               DryWet::MinDryWetPercent,
+                                                               DryWet::MaxDryWetPercent,
+                                                               DryWet::DefaultDryWetPercent));
     
    /* parameters.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID("Int", 1),
                                                                "Int",
@@ -233,7 +233,7 @@ void Curso032026AudioProcessor::updateParameters()
     gain.setGainDb (apvts.getRawParameterValue("Gain")->load());
     // panning.setPanValue (apvts.getRawParameterValue("Panning")->load());
     // lfo.setFrequencyValue (apvts.getRawParameterValue("LFO")->load());
-    drywet.setDryWetValue (apvts.getRawParameterValue("DryWet")->load());
+    drywet.setDryWetPercent (apvts.getRawParameterValue("DryWet")->load());
 }
 
 //==============================================================================

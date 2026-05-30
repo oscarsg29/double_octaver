@@ -10,11 +10,8 @@
 
 #include "DryWet.h"
 
-DryWet::DryWet() {}
-
-DryWet::~DryWet() {}
-
-void DryWet::process (juce::AudioBuffer<float>& dryBuffer, juce::AudioBuffer<float>& wetBuffer)
+void DryWet::process(juce::AudioBuffer<float>& dryBuffer,
+                     juce::AudioBuffer<float>& wetBuffer) const
 {
     const auto numChannels = juce::jmin (dryBuffer.getNumChannels(), wetBuffer.getNumChannels());
     const auto numSamples = juce::jmin (dryBuffer.getNumSamples(), wetBuffer.getNumSamples());
@@ -25,14 +22,8 @@ void DryWet::process (juce::AudioBuffer<float>& dryBuffer, juce::AudioBuffer<flo
         {
             const auto wet = wetBuffer.getSample (channel, i);
             const auto dry = dryBuffer.getSample (channel, i);
-            const auto out = dry * (1.0f - dryWetValue) + (dryWetValue * wet);
             
-            wetBuffer.setSample (channel, i, out);
+            wetBuffer.setSample (channel, i, processSample(dry, wet));
         }
     }
-}
-
-void DryWet::setDryWetValue (float value)
-{
-    dryWetValue = juce::jlimit (0.0f, 1.0f, value / 100.0f);
 }
