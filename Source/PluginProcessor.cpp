@@ -48,13 +48,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout Curso032026AudioProcessor::c
                                                                "LFO",
                                                                0.01f,
                                                                20.0f,
-                                                               20.0f));
+                                                               20.0f));*/
 
     parameters.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("DryWet", 1),
                                                                "DryWet",
                                                                0.0f,
                                                                100.0f,
-                                                               50.0f));*/
+                                                               50.0f));
     
    /* parameters.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID("Int", 1),
                                                                "Int",
@@ -193,18 +193,39 @@ void Curso032026AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
 
     updateParameters();
 
-    applyGainToBuffer (buffer);
+    if (buffer.getNumChannels() == 0)
+        return;
 
-    // dryBuffer.makeCopyOf (buffer);
-    //
+    dryBuffer.makeCopyOf (buffer);
+
+    if (buffer.getNumChannels() == 1)
+    {
+        auto view = audio::MonoPolicy::makeView (buffer);
+
+        dsp::processSamples (view, [this] (audio::MonoBufferView& mono, int sampleIndex)
+        {
+            mono.samples[sampleIndex] = gain.processSample (mono.samples[sampleIndex]);
+        });
+    }
+    else
+    {
+        auto view = audio::StereoPolicy::makeView (buffer);
+
+        dsp::processSamples (view, [this] (audio::StereoBufferView& stereo, int sampleIndex)
+        {
+            stereo.left[sampleIndex] = gain.processSample (stereo.left[sampleIndex]);
+            stereo.right[sampleIndex] = gain.processSample (stereo.right[sampleIndex]);
+        });
+    }
+
     // panning.process (buffer);
     // lfo.process (buffer);
     // lpfBiquad.process (buffer);
     // filters.processLowpass (buffer);
     // filters.processHighpass (buffer);
     // filters.processBandpass (buffer);
-    //
-    // drywet.process (dryBuffer, buffer);
+
+    drywet.process (dryBuffer, buffer);
 }
 
 void Curso032026AudioProcessor::updateParameters()
@@ -212,18 +233,7 @@ void Curso032026AudioProcessor::updateParameters()
     gain.setGainDb (apvts.getRawParameterValue("Gain")->load());
     // panning.setPanValue (apvts.getRawParameterValue("Panning")->load());
     // lfo.setFrequencyValue (apvts.getRawParameterValue("LFO")->load());
-    // drywet.setDryWetValue (apvts.getRawParameterValue("DryWet")->load());
-}
-
-void Curso032026AudioProcessor::applyGainToBuffer(juce::AudioBuffer<float>& buffer)
-{
-    for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
-    {
-        auto* samples = buffer.getWritePointer (channel);
-
-        for (int sampleIndex = 0; sampleIndex < buffer.getNumSamples(); ++sampleIndex)
-            samples[sampleIndex] = gain.processSample (samples[sampleIndex]);
-    }
+    drywet.setDryWetValue (apvts.getRawParameterValue("DryWet")->load());
 }
 
 //==============================================================================
@@ -234,7 +244,7 @@ bool Curso032026AudioProcessor::hasEditor() const
 
 juce::AudioProcessorEditor* Curso032026AudioProcessor::createEditor()
 {
-    //return new Curso032026AudioProcessorEditor (*this);
+//    return new Curso032026AudioProcessorEditor (*this);
     return new juce::GenericAudioProcessorEditor (*this);
 }
 

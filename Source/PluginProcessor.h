@@ -8,11 +8,14 @@
 
 #pragma once
 //#include "DSP/Biquad.h"
-//#include "DSP/DryWet.h"
+#include "DSP/ChannelsView/MonoPolicy.h"
+#include "DSP/ChannelsView/StereoPolicy.h"
+#include "DSP/DryWet.h"
 //#include "DSP/Filters.h"
 #include "DSP/Gain/Gain.h"
 //#include "DSP/LFO/LFO.h"
 //#include "DSP/Panning.h"
+#include "DSP/SamplesProcessor.h"
 #include <JuceHeader.h>
 
 //==============================================================================
@@ -62,14 +65,13 @@ class Curso032026AudioProcessor : public juce::AudioProcessor {
 
   private:
     void updateParameters();
-    void applyGainToBuffer(juce::AudioBuffer<float>& buffer);
 
-    // juce::AudioBuffer<float> dryBuffer;
+    juce::AudioBuffer<float> dryBuffer;
 
-    Gain gain;
+    Gain gain{};
     // Panning panning;
     // LFO lfo;
-    // DryWet drywet;
+    DryWet drywet;
     // LPF_Biquad lpfBiquad;
     // Filters filters;
 

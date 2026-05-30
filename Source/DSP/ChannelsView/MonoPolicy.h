@@ -9,7 +9,7 @@
 
 #include <juce_audio_basics/juce_audio_basics.h>
 
-#include "AudioBufferViews.hpp"
+#include "AudioBuffersView.h"
 
 namespace ChannelLayout
 {
