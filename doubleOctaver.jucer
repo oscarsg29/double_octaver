@@ -23,6 +23,9 @@
       <GROUP id="{8C7EA608-E48C-7EF9-697C-0BDBC912370E}" name="Gain">
         <FILE id="KYgQbG" name="Gain.h" compile="0" resource="0" file="Source/DSP/Gain/Gain.h"/>
       </GROUP>
+      <GROUP id="{17B665C4-7055-4A14-9480-42D25593B338}" name="Octaver">
+        <FILE id="Q8eHku" name="Octaver.h" compile="0" resource="0" file="Source/DSP/Octaver/Octaver.h"/>
+      </GROUP>
       <GROUP id="{BE7C9C41-16CE-C227-3031-ACD107C2DF1F}" name="LFO">
         <FILE id="BGHdJB" name="LFO.cpp" compile="1" resource="0" file="Source/DSP/LFO/LFO.cpp"/>
         <FILE id="DsuXm7" name="LFO.h" compile="0" resource="0" file="Source/DSP/LFO/LFO.h"/>

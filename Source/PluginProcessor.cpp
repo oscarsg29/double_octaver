@@ -55,6 +55,20 @@ juce::AudioProcessorValueTreeState::ParameterLayout Curso032026AudioProcessor::c
                                                                DryWet::MinDryWetPercent,
                                                                DryWet::MaxDryWetPercent,
                                                                DryWet::DefaultDryWetPercent));
+
+    parameters.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("OctaveGain", 1),
+                                                               "OctaveGain",
+                                                               Octaver::MinOctaveGainDb,
+                                                               Octaver::MaxOctaveGainDb,
+                                                               Octaver::DefaultOctaveGainDb));
+
+    parameters.add(std::make_unique<juce::AudioParameterChoice>(juce::ParameterID("OctaveShift", 1),
+                                                                "OctaveShift",
+                                                                juce::StringArray("-2 Oct",
+                                                                                  "-1 Oct",
+                                                                                  "+1 Oct",
+                                                                                  "+2 Oct"),
+                                                                1));
     
    /* parameters.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID("Int", 1),
                                                                "Int",
@@ -143,7 +157,7 @@ void Curso032026AudioProcessor::changeProgramName (int index, const juce::String
 //==============================================================================
 void Curso032026AudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    juce::ignoreUnused (sampleRate, samplesPerBlock);
+    octaver.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
 
     // juce::dsp::ProcessSpec spec;
     // spec.sampleRate = sampleRate;
@@ -197,6 +211,11 @@ void Curso032026AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
         return;
 
     dryBuffer.makeCopyOf (buffer);
+    octaveBuffer.makeCopyOf (buffer);
+
+    octaver.process(octaveBuffer);
+    drywet.process(dryBuffer, octaveBuffer);
+    buffer.makeCopyOf(octaveBuffer);
 
     if (buffer.getNumChannels() == 1)
     {
@@ -225,12 +244,13 @@ void Curso032026AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     // filters.processHighpass (buffer);
     // filters.processBandpass (buffer);
 
-    drywet.process (dryBuffer, buffer);
 }
 
 void Curso032026AudioProcessor::updateParameters()
 {
     gain.setGainDb (apvts.getRawParameterValue("Gain")->load());
+    octaver.setOctaveGainDb(apvts.getRawParameterValue("OctaveGain")->load());
+    octaver.setShiftFromChoiceIndex(static_cast<int>(apvts.getRawParameterValue("OctaveShift")->load()));
     // panning.setPanValue (apvts.getRawParameterValue("Panning")->load());
     // lfo.setFrequencyValue (apvts.getRawParameterValue("LFO")->load());
     drywet.setDryWetPercent (apvts.getRawParameterValue("DryWet")->load());

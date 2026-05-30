@@ -14,6 +14,7 @@
 //#include "DSP/Filters.h"
 #include "DSP/Gain/Gain.h"
 //#include "DSP/LFO/LFO.h"
+#include "DSP/Octaver/Octaver.h"
 //#include "DSP/Panning.h"
 #include "DSP/SamplesProcessor.h"
 #include <JuceHeader.h>
@@ -67,8 +68,10 @@ class Curso032026AudioProcessor : public juce::AudioProcessor {
     void updateParameters();
 
     juce::AudioBuffer<float> dryBuffer;
+    juce::AudioBuffer<float> octaveBuffer;
 
     Gain gain{};
+    Octaver octaver{};
     // Panning panning;
     // LFO lfo;
     DryWet drywet;
