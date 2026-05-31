@@ -42,7 +42,7 @@ public:
         return dryRatio_;
     }
 
-    [[nodiscard]] float processSample(float drySample,
+    [[nodiscard]] float operator()(float drySample,
                                       float wetSample) const noexcept {
         return drySample * dryRatio_ + wetSample * wetRatio_;
     }

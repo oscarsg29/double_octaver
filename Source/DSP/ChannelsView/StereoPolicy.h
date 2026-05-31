@@ -38,18 +38,18 @@ struct StereoPolicy
             return {};
         }
 
-        float* const left =
+        float* const leftSamples =
             buffer.getWritePointer(ChannelLayout::LeftChannelIndex);
 
-        float* const right =
+        float* const rightSamples =
             (numChannels > ChannelLayout::RightChannelIndex)
                 ? buffer.getWritePointer(ChannelLayout::RightChannelIndex)
-                : left; // mono fallback
+                : leftSamples; // mono fallback
 
         return
         {
-            left,
-            right,
+            {leftSamples, numSamples},
+            {rightSamples, numSamples},
             numSamples
         };
     }

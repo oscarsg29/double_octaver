@@ -180,29 +180,22 @@ void Curso032026AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
   octaver.process(octaveBuffer);
 
+
   if (buffer.getNumChannels() == 1) {
     auto dryView = audio::MonoPolicy::makeView(dryBuffer);
     auto wetView = audio::MonoPolicy::makeView(octaveBuffer);
     auto monoView = audio::MonoPolicy::makeView(buffer);
 
-      dsp::transformSamples(monoView, gain);
+    dsp::combineSamples(monoView, dryView, wetView, drywet);
+    dsp::transformSamples(monoView, gain);
 
   } else if (buffer.getNumChannels() == 2) {
     auto dryView = audio::StereoPolicy::makeView(dryBuffer);
     auto wetView = audio::StereoPolicy::makeView(octaveBuffer);
     auto stereoView = audio::StereoPolicy::makeView(buffer);
 
-    //dsp::processSamples(stereoView, [this, dryView,
-    //                                 wetView](audio::StereoBufferView &stereo) {
-      //const auto mixedLeft = drywet.processSample(dryView.left[sampleIndex],
-      //                                            wetView.left[sampleIndex]);
-
-      //const auto mixedRight = drywet.processSample(dryView.right[sampleIndex],
-      //                                             wetView.right[sampleIndex]);
-
-      //stereo.left[sampleIndex] = gain.processSample(mixedLeft);
-      //stereo.right[sampleIndex] = gain.processSample(mixedRight);
-    //});
+    dsp::combineSamples(stereoView, dryView, wetView, drywet);
+    dsp::transformSamples(stereoView, gain);
   }
 
   // panning.process (buffer);
