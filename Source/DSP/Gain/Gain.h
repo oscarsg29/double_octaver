@@ -31,7 +31,7 @@ class Gain {
 
     [[nodiscard]] float getLinearGain() const noexcept { return gainLinear_; }
 
-    [[nodiscard]] float processSample(float sample) const noexcept {
+    [[nodiscard]] float operator()(float sample) const noexcept {
         return sample * gainLinear_;
     }
 
