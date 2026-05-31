@@ -2,7 +2,7 @@
 
 <JUCERPROJECT id="weaVf9" name="DoubleOctaver" projectType="audioplug" useAppConfig="0"
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildAU,buildStandalone,buildVST3"
-              companyWebsite="OscarOsorio">
+              companyName="Oscar Osorio" companyEmail="oscar.osorio.29@outlook.com">
   <MAINGROUP id="jC2Qwq" name="DoubleOctaver">
     <GROUP id="{DFD78883-CED6-112C-8173-F3B5780E69D1}" name="Source">
       <FILE id="cdWRYk" name="PluginProcessor.cpp" compile="1" resource="0"

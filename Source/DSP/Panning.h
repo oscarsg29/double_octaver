@@ -10,10 +10,10 @@
 
 #pragma once
 
-class Panner
+class Panning
 {
 public:
-    explicit Panner(float p = 0.0f) noexcept
+    explicit Panning(float p = 0.0f) noexcept
     {
         setPan(p);
     }

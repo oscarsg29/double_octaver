@@ -214,26 +214,37 @@ void Curso032026AudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     octaveBuffer.makeCopyOf (buffer);
 
     octaver.process(octaveBuffer);
-    drywet.process(dryBuffer, octaveBuffer);
-    buffer.makeCopyOf(octaveBuffer);
 
     if (buffer.getNumChannels() == 1)
     {
-        auto view = audio::MonoPolicy::makeView (buffer);
+        auto dryView = audio::MonoPolicy::makeView (dryBuffer);
+        auto wetView = audio::MonoPolicy::makeView (octaveBuffer);
+        auto monoView = audio::MonoPolicy::makeView (buffer);
 
-        dsp::processSamples (view, [this] (audio::MonoBufferView& mono, int sampleIndex)
+        dsp::processSamples (monoView, [this, dryView, wetView] (audio::MonoBufferView& mono, int sampleIndex)
         {
-            mono.samples[sampleIndex] = gain.processSample (mono.samples[sampleIndex]);
+            const auto mixedSample =
+                drywet.processSample (dryView.samples[sampleIndex], wetView.samples[sampleIndex]);
+
+            mono.samples[sampleIndex] = gain.processSample (mixedSample);
         });
     }
-    else
+    else if (buffer.getNumChannels() == 2)
     {
-        auto view = audio::StereoPolicy::makeView (buffer);
+        auto dryView = audio::StereoPolicy::makeView (dryBuffer);
+        auto wetView = audio::StereoPolicy::makeView (octaveBuffer);
+        auto stereoView = audio::StereoPolicy::makeView (buffer);
 
-        dsp::processSamples (view, [this] (audio::StereoBufferView& stereo, int sampleIndex)
+        dsp::processSamples (stereoView, [this, dryView, wetView] (audio::StereoBufferView& stereo, int sampleIndex)
         {
-            stereo.left[sampleIndex] = gain.processSample (stereo.left[sampleIndex]);
-            stereo.right[sampleIndex] = gain.processSample (stereo.right[sampleIndex]);
+            const auto mixedLeft =
+                drywet.processSample (dryView.left[sampleIndex], wetView.left[sampleIndex]);
+
+            const auto mixedRight =
+                drywet.processSample (dryView.right[sampleIndex], wetView.right[sampleIndex]);
+
+            stereo.left[sampleIndex] = gain.processSample (mixedLeft);
+            stereo.right[sampleIndex] = gain.processSample (mixedRight);
         });
     }
 
