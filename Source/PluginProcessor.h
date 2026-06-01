@@ -15,10 +15,10 @@
 #include "DSP/Gain/Gain.h"
 //#include "DSP/LFO/LFO.h"
 #include "DSP/Octaver/Octaver.h"
-#include "DSP/Octaver/OctaverPitchShifter.h"
 //#include "DSP/Panning.h"
 #include "DSP/SamplesProcessor.h"
 #include <JuceHeader.h>
+#include <memory>
 
 //==============================================================================
 /**
@@ -66,6 +66,8 @@ class Curso032026AudioProcessor : public juce::AudioProcessor {
     juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
 
   private:
+    class OctaverPitchShifter;
+
     void updateParameters();
 
     juce::AudioBuffer<float> dryBuffer;
@@ -73,7 +75,7 @@ class Curso032026AudioProcessor : public juce::AudioProcessor {
 
     Gain gain{};
     Octaver octaver{};
-    OctaverPitchShifter octaverPitchShifter{};
+    std::unique_ptr<OctaverPitchShifter> octaverPitchShifter;
     // Panning panning;
     // LFO lfo;
     DryWet drywet;

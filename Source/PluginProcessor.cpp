@@ -9,6 +9,74 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+#include "DSP/McPherson/McPhersonPitchShifter.h"
+#include "DSP/WangRubberband/WangRubberBandPitchShifter.h"
+
+class Curso032026AudioProcessor::OctaverPitchShifter {
+  public:
+    void prepare(double sampleRate, int maximumBlockSize, int numChannels)
+    {
+        juce::dsp::ProcessSpec spec;
+        spec.sampleRate = sampleRate;
+        spec.maximumBlockSize = static_cast<juce::uint32>(maximumBlockSize);
+        spec.numChannels = static_cast<juce::uint32>(numChannels);
+
+        lowOctaveShifter_.prepare(spec);
+        highOctaveShifter_.prepare(spec);
+        updateAlgorithmPitch();
+    }
+
+    void setShift(Octaver::Shift shift) noexcept
+    {
+        shift_ = shift;
+        activeAlgorithm_ = Octaver::isHighOctaveShift(shift_)
+                               ? Algorithm::rubberBand
+                               : Algorithm::mcPherson;
+        updateAlgorithmPitch();
+    }
+
+    void setShiftFromChoiceIndex(int choiceIndex) noexcept
+    {
+        switch (choiceIndex)
+        {
+            case 0: setShift(Octaver::Shift::twoDown); break;
+            case 1: setShift(Octaver::Shift::oneDown); break;
+            case 2: setShift(Octaver::Shift::oneUp); break;
+            case 3: setShift(Octaver::Shift::twoUp); break;
+            default: setShift(Octaver::Shift::oneDown); break;
+        }
+    }
+
+    [[nodiscard]] Octaver::Shift getShift() const noexcept { return shift_; }
+
+    void operator()(juce::AudioBuffer<float>& buffer)
+    {
+        if (activeAlgorithm_ == Algorithm::rubberBand)
+            highOctaveShifter_.process(buffer);
+        else
+            lowOctaveShifter_.process(buffer);
+    }
+
+  private:
+    enum class Algorithm {
+        mcPherson,
+        rubberBand
+    };
+
+    void updateAlgorithmPitch() noexcept
+    {
+        const auto semitones = Octaver::getShiftInSemitones(shift_);
+
+        lowOctaveShifter_.setSemitones(semitones);
+        highOctaveShifter_.setSemitones(static_cast<float>(semitones));
+    }
+
+    Octaver::Shift shift_{Octaver::Shift::oneDown};
+    Algorithm activeAlgorithm_{Algorithm::mcPherson};
+    McPhersonPitchShifter lowOctaveShifter_;
+    WangRubberBandPitchShifter highOctaveShifter_;
+};
+
 //==============================================================================
 Curso032026AudioProcessor::Curso032026AudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -24,9 +92,10 @@ Curso032026AudioProcessor::Curso032026AudioProcessor()
       apvts(*this, nullptr, "Parameters", createParameters())
 #endif
 {
+  octaverPitchShifter = std::make_unique<OctaverPitchShifter>();
 }
 
-Curso032026AudioProcessor::~Curso032026AudioProcessor() {}
+Curso032026AudioProcessor::~Curso032026AudioProcessor() = default;
 
 juce::AudioProcessorValueTreeState::ParameterLayout
 Curso032026AudioProcessor::createParameters() {
@@ -123,8 +192,8 @@ void Curso032026AudioProcessor::changeProgramName(int index,
 //==============================================================================
 void Curso032026AudioProcessor::prepareToPlay(double sampleRate,
                                               int samplesPerBlock) {
-  octaverPitchShifter.prepare(sampleRate, samplesPerBlock,
-                              getTotalNumOutputChannels());
+  octaverPitchShifter->prepare(sampleRate, samplesPerBlock,
+                               getTotalNumOutputChannels());
 
   // juce::dsp::ProcessSpec spec;
   // spec.sampleRate = sampleRate;
@@ -179,7 +248,7 @@ void Curso032026AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   dryBuffer.makeCopyOf(buffer);
   octaveBuffer.makeCopyOf(buffer);
 
-  octaverPitchShifter(octaveBuffer);
+  (*octaverPitchShifter)(octaveBuffer);
 
   if (buffer.getNumChannels() == 1) {
     auto dryView = audio::MonoPolicy::makeView(dryBuffer);
@@ -211,7 +280,7 @@ void Curso032026AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 void Curso032026AudioProcessor::updateParameters() {
   gain.setGainDb(apvts.getRawParameterValue("Gain")->load());
   octaver.setOctaveGainDb(apvts.getRawParameterValue("OctaveGain")->load());
-  octaverPitchShifter.setShiftFromChoiceIndex(
+  octaverPitchShifter->setShiftFromChoiceIndex(
       static_cast<int>(apvts.getRawParameterValue("OctaveShift")->load()));
   // panning.setPanValue (apvts.getRawParameterValue("Panning")->load());
   // lfo.setFrequencyValue (apvts.getRawParameterValue("LFO")->load());
