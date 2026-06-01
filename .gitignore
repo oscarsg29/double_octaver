@@ -67,3 +67,14 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# macOS metadata
+.DS_Store
+
+# JUCE/Projucer generated output
+/JuceLibraryCode/
+/Builds/MacOSX/DerivedData/
+/Builds/MacOSX/DoubleOctaver.xcodeproj/
+/Builds/MacOSX/Info-*.plist
+/Builds/MacOSX/RecentFilesMenuTemplate.nib
+/Builds/VisualStudio2022/
