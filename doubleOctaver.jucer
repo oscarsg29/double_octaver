@@ -37,6 +37,8 @@
       </GROUP>
       <GROUP id="{17B665C4-7055-4A14-9480-42D25593B338}" name="Octaver">
         <FILE id="Q8eHku" name="Octaver.h" compile="0" resource="0" file="Source/DSP/Octaver/Octaver.h"/>
+        <FILE id="WPQnWf" name="OctaverPitchShifter.h" compile="0" resource="0"
+              file="Source/DSP/Octaver/OctaverPitchShifter.h"/>
       </GROUP>
       <GROUP id="{BE7C9C41-16CE-C227-3031-ACD107C2DF1F}" name="LFO">
         <FILE id="BGHdJB" name="LFO.cpp" compile="1" resource="0" file="Source/DSP/LFO/LFO.cpp"/>

@@ -123,13 +123,8 @@ void Curso032026AudioProcessor::changeProgramName(int index,
 //==============================================================================
 void Curso032026AudioProcessor::prepareToPlay(double sampleRate,
                                               int samplesPerBlock) {
-    
-    juce::dsp::ProcessSpec spec;
-    spec.maximumBlockSize = (juce::uint32) samplesPerBlock;
-    spec.numChannels = (juce::uint32) getTotalNumOutputChannels();
-    spec.sampleRate = sampleRate;
-    
-  octaver.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
+  octaverPitchShifter.prepare(sampleRate, samplesPerBlock,
+                              getTotalNumOutputChannels());
 
   // juce::dsp::ProcessSpec spec;
   // spec.sampleRate = sampleRate;
@@ -184,13 +179,14 @@ void Curso032026AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   dryBuffer.makeCopyOf(buffer);
   octaveBuffer.makeCopyOf(buffer);
 
-  octaver.process(octaveBuffer);
+  octaverPitchShifter(octaveBuffer);
 
   if (buffer.getNumChannels() == 1) {
     auto dryView = audio::MonoPolicy::makeView(dryBuffer);
     auto wetView = audio::MonoPolicy::makeView(octaveBuffer);
     auto monoView = audio::MonoPolicy::makeView(buffer);
 
+    dsp::transformSamples(wetView, octaver);
     dsp::combineSamples(monoView, dryView, wetView, drywet);
     dsp::transformSamples(monoView, gain);
 
@@ -199,6 +195,7 @@ void Curso032026AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     auto wetView = audio::StereoPolicy::makeView(octaveBuffer);
     auto stereoView = audio::StereoPolicy::makeView(buffer);
 
+    dsp::transformSamples(wetView, octaver);
     dsp::combineSamples(stereoView, dryView, wetView, drywet);
     dsp::transformSamples(stereoView, gain);
   }
@@ -214,7 +211,7 @@ void Curso032026AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 void Curso032026AudioProcessor::updateParameters() {
   gain.setGainDb(apvts.getRawParameterValue("Gain")->load());
   octaver.setOctaveGainDb(apvts.getRawParameterValue("OctaveGain")->load());
-  octaver.setShiftFromChoiceIndex(
+  octaverPitchShifter.setShiftFromChoiceIndex(
       static_cast<int>(apvts.getRawParameterValue("OctaveShift")->load()));
   // panning.setPanValue (apvts.getRawParameterValue("Panning")->load());
   // lfo.setFrequencyValue (apvts.getRawParameterValue("LFO")->load());

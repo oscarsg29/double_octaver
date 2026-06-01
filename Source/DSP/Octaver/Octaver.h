@@ -10,9 +10,6 @@
 
 #pragma once
 
-#include "../McPherson/McPhersonPitchShifter.h"
-#include "../WangRubberband/WangRubberBandPitchShifter.h"
-#include <JuceHeader.h>
 #include <algorithm>
 #include <cmath>
 
@@ -32,19 +29,6 @@ class Octaver {
     Octaver() noexcept
     {
         setOctaveGainDb(DefaultOctaveGainDb);
-        setShift(Shift::oneDown);
-    }
-
-    void prepare(double sampleRate, int maximumBlockSize, int numChannels)
-    {
-        juce::dsp::ProcessSpec spec;
-        spec.sampleRate = sampleRate;
-        spec.maximumBlockSize = static_cast<juce::uint32>(maximumBlockSize);
-        spec.numChannels = static_cast<juce::uint32>(numChannels);
-
-        lowOctaveShifter_.prepare(spec);
-        highOctaveShifter_.prepare(spec);
-        updateAlgorithmPitch();
     }
 
     void setOctaveGainDb(float gainDb) noexcept
@@ -53,46 +37,14 @@ class Octaver {
         octaveGainLinear_ = std::pow(10.0f, octaveGainDb_ / 20.0f);
     }
 
-    void setShift(Shift shift) noexcept
-    {
-        shift_ = shift;
-        activeAlgorithm_ = isHighOctaveShift(shift_) ? Algorithm::rubberBand : Algorithm::mcPherson;
-        updateAlgorithmPitch();
-    }
-
-    void setShiftFromChoiceIndex(int choiceIndex) noexcept
-    {
-        switch (choiceIndex)
-        {
-            case 0: setShift(Shift::twoDown); break;
-            case 1: setShift(Shift::oneDown); break;
-            case 2: setShift(Shift::oneUp); break;
-            case 3: setShift(Shift::twoUp); break;
-            default: setShift(Shift::oneDown); break;
-        }
-    }
-
     [[nodiscard]] float getOctaveGainDb() const noexcept { return octaveGainDb_; }
 
     [[nodiscard]] float getLinearOctaveGain() const noexcept { return octaveGainLinear_; }
 
-    [[nodiscard]] Shift getShift() const noexcept { return shift_; }
-
-    void process(juce::AudioBuffer<float>& buffer)
+    [[nodiscard]] float operator()(float sample) const noexcept
     {
-        if (activeAlgorithm_ == Algorithm::rubberBand)
-            highOctaveShifter_.process(buffer);
-        else
-            lowOctaveShifter_.process(buffer);
-
-        buffer.applyGain(octaveGainLinear_);
+        return sample * octaveGainLinear_;
     }
-
-  private:
-    enum class Algorithm {
-        mcPherson,
-        rubberBand
-    };
 
     [[nodiscard]] static bool isHighOctaveShift(Shift shift) noexcept
     {
@@ -112,18 +64,7 @@ class Octaver {
         return -12;
     }
 
-    void updateAlgorithmPitch() noexcept
-    {
-        const auto semitones = getShiftInSemitones(shift_);
-
-        lowOctaveShifter_.setSemitones(semitones);
-        highOctaveShifter_.setSemitones(static_cast<float>(semitones));
-    }
-
-    Shift shift_{Shift::oneDown};
-    Algorithm activeAlgorithm_{Algorithm::mcPherson};
+  private:
     float octaveGainDb_{DefaultOctaveGainDb};
     float octaveGainLinear_{1.0f};
-    McPhersonPitchShifter lowOctaveShifter_;
-    WangRubberBandPitchShifter highOctaveShifter_;
 };
