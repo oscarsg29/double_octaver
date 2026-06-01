@@ -123,6 +123,12 @@ void Curso032026AudioProcessor::changeProgramName(int index,
 //==============================================================================
 void Curso032026AudioProcessor::prepareToPlay(double sampleRate,
                                               int samplesPerBlock) {
+    
+    juce::dsp::ProcessSpec spec;
+    spec.maximumBlockSize = (juce::uint32) samplesPerBlock;
+    spec.numChannels = (juce::uint32) getTotalNumOutputChannels();
+    spec.sampleRate = sampleRate;
+    
   octaver.prepare(sampleRate, samplesPerBlock, getTotalNumOutputChannels());
 
   // juce::dsp::ProcessSpec spec;
@@ -179,7 +185,6 @@ void Curso032026AudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   octaveBuffer.makeCopyOf(buffer);
 
   octaver.process(octaveBuffer);
-
 
   if (buffer.getNumChannels() == 1) {
     auto dryView = audio::MonoPolicy::makeView(dryBuffer);

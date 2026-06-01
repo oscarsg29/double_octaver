@@ -10,10 +10,11 @@
 
 #pragma once
 
+#include "../McPherson/McPhersonPitchShifter.h"
+#include "../WangRubberband/WangRubberBandPitchShifter.h"
 #include <JuceHeader.h>
 #include <algorithm>
 #include <cmath>
-#include <vector>
 
 class Octaver {
   public:
@@ -36,25 +37,14 @@ class Octaver {
 
     void prepare(double sampleRate, int maximumBlockSize, int numChannels)
     {
-        juce::ignoreUnused(maximumBlockSize);
+        juce::dsp::ProcessSpec spec;
+        spec.sampleRate = sampleRate;
+        spec.maximumBlockSize = static_cast<juce::uint32>(maximumBlockSize);
+        spec.numChannels = static_cast<juce::uint32>(numChannels);
 
-        sampleRate_ = sampleRate > 0.0 ? sampleRate : 44100.0;
-        delaySize_ = juce::jmax(4, static_cast<int>(std::ceil(sampleRate_ * 0.25)));
-        writePosition_ = 0;
-
-        delayBuffer_.assign(static_cast<size_t>(juce::jmax(1, numChannels)),
-                            std::vector<float>(static_cast<size_t>(delaySize_), 0.0f));
-        readPositions_.assign(delayBuffer_.size(), static_cast<float>(delaySize_) * 0.5f);
-    }
-
-    void reset() noexcept
-    {
-        for (auto& channel : delayBuffer_)
-            std::fill(channel.begin(), channel.end(), 0.0f);
-
-        writePosition_ = 0;
-        std::fill(readPositions_.begin(), readPositions_.end(),
-                  static_cast<float>(delaySize_) * 0.5f);
+        lowOctaveShifter_.prepare(spec);
+        highOctaveShifter_.prepare(spec);
+        updateAlgorithmPitch();
     }
 
     void setOctaveGainDb(float gainDb) noexcept
@@ -66,14 +56,8 @@ class Octaver {
     void setShift(Shift shift) noexcept
     {
         shift_ = shift;
-
-        switch (shift_)
-        {
-            case Shift::twoDown: pitchRatio_ = 0.25f; break;
-            case Shift::oneDown: pitchRatio_ = 0.5f; break;
-            case Shift::oneUp:   pitchRatio_ = 2.0f; break;
-            case Shift::twoUp:   pitchRatio_ = 4.0f; break;
-        }
+        activeAlgorithm_ = isHighOctaveShift(shift_) ? Algorithm::rubberBand : Algorithm::mcPherson;
+        updateAlgorithmPitch();
     }
 
     void setShiftFromChoiceIndex(int choiceIndex) noexcept
@@ -96,74 +80,50 @@ class Octaver {
 
     void process(juce::AudioBuffer<float>& buffer)
     {
-        ensureChannelCount(buffer.getNumChannels());
+        if (activeAlgorithm_ == Algorithm::rubberBand)
+            highOctaveShifter_.process(buffer);
+        else
+            lowOctaveShifter_.process(buffer);
 
-        if (delaySize_ <= 0 || buffer.getNumChannels() == 0)
-            return;
-
-        for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
-        {
-            for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
-            {
-                auto& delayChannel = delayBuffer_[static_cast<size_t>(channel)];
-                const auto input = buffer.getSample(channel, sample);
-
-                delayChannel[static_cast<size_t>(writePosition_)] = input;
-
-                buffer.setSample(channel, sample,
-                                 readInterpolatedSample(channel) * octaveGainLinear_);
-            }
-
-            advancePositions();
-        }
+        buffer.applyGain(octaveGainLinear_);
     }
 
   private:
-    void ensureChannelCount(int numChannels)
-    {
-        if (numChannels <= 0 || static_cast<size_t>(numChannels) <= delayBuffer_.size())
-            return;
+    enum class Algorithm {
+        mcPherson,
+        rubberBand
+    };
 
-        delayBuffer_.resize(static_cast<size_t>(numChannels),
-                            std::vector<float>(static_cast<size_t>(delaySize_), 0.0f));
-        readPositions_.resize(static_cast<size_t>(numChannels),
-                              static_cast<float>(delaySize_) * 0.5f);
+    [[nodiscard]] static bool isHighOctaveShift(Shift shift) noexcept
+    {
+        return shift == Shift::oneUp || shift == Shift::twoUp;
     }
 
-    [[nodiscard]] float readInterpolatedSample(int channel) const noexcept
+    [[nodiscard]] static int getShiftInSemitones(Shift shift) noexcept
     {
-        const auto& delayChannel = delayBuffer_[static_cast<size_t>(channel)];
-        const auto readPosition = readPositions_[static_cast<size_t>(channel)];
-        const auto index0 = static_cast<int>(readPosition);
-        const auto index1 = (index0 + 1) % delaySize_;
-        const auto fraction = readPosition - static_cast<float>(index0);
-
-        const auto sample0 = delayChannel[static_cast<size_t>(index0)];
-        const auto sample1 = delayChannel[static_cast<size_t>(index1)];
-
-        return sample0 + (sample1 - sample0) * fraction;
-    }
-
-    void advancePositions() noexcept
-    {
-        writePosition_ = (writePosition_ + 1) % delaySize_;
-
-        for (auto& readPosition : readPositions_)
+        switch (shift)
         {
-            readPosition += pitchRatio_;
-
-            while (readPosition >= static_cast<float>(delaySize_))
-                readPosition -= static_cast<float>(delaySize_);
+            case Shift::twoDown: return -24;
+            case Shift::oneDown: return -12;
+            case Shift::oneUp:   return 12;
+            case Shift::twoUp:   return 24;
         }
+
+        return -12;
     }
 
-    double sampleRate_{44100.0};
-    int delaySize_{0};
-    int writePosition_{0};
+    void updateAlgorithmPitch() noexcept
+    {
+        const auto semitones = getShiftInSemitones(shift_);
+
+        lowOctaveShifter_.setSemitones(semitones);
+        highOctaveShifter_.setSemitones(static_cast<float>(semitones));
+    }
+
+    Shift shift_{Shift::oneDown};
+    Algorithm activeAlgorithm_{Algorithm::mcPherson};
     float octaveGainDb_{DefaultOctaveGainDb};
     float octaveGainLinear_{1.0f};
-    float pitchRatio_{0.5f};
-    Shift shift_{Shift::oneDown};
-    std::vector<std::vector<float>> delayBuffer_;
-    std::vector<float> readPositions_;
+    McPhersonPitchShifter lowOctaveShifter_;
+    WangRubberBandPitchShifter highOctaveShifter_;
 };
