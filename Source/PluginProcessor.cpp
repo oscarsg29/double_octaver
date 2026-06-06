@@ -21,18 +21,22 @@ class DoubleOctaverAudioProcessor::OctaverPitchShifter {
         spec.maximumBlockSize = static_cast<juce::uint32>(maximumBlockSize);
         spec.numChannels = static_cast<juce::uint32>(numChannels);
 
-        lowOctaveShifter_.prepare(spec);
-        highOctaveShifter_.prepare(spec);
+        mcPhersonShifter_.prepare(spec);
+        rubberBandShifter_.prepare(spec);
         updateAlgorithmPitch();
     }
 
     void setShift(Octaver::Shift shift) noexcept
     {
+        if (shift == shift_)
+            return;
+
         shift_ = shift;
-        activeAlgorithm_ = Octaver::isHighOctaveShift(shift_)
-                               ? Algorithm::rubberBand
-                               : Algorithm::mcPherson;
+        const auto nextAlgorithm = getAlgorithmForShift(shift_);
+
+        activeAlgorithm_ = nextAlgorithm;
         updateAlgorithmPitch();
+        resetActiveAlgorithm();
     }
 
     void setShiftFromChoiceIndex(int choiceIndex) noexcept
@@ -52,9 +56,9 @@ class DoubleOctaverAudioProcessor::OctaverPitchShifter {
     void operator()(juce::AudioBuffer<float>& buffer)
     {
         if (activeAlgorithm_ == Algorithm::rubberBand)
-            highOctaveShifter_.process(buffer);
+            rubberBandShifter_.process(buffer);
         else
-            lowOctaveShifter_.process(buffer);
+            mcPhersonShifter_.process(buffer);
     }
 
   private:
@@ -63,18 +67,33 @@ class DoubleOctaverAudioProcessor::OctaverPitchShifter {
         rubberBand
     };
 
+    [[nodiscard]] static Algorithm getAlgorithmForShift(Octaver::Shift shift) noexcept
+    {
+        return Octaver::usesMcPhersonAlgorithm(shift)
+                   ? Algorithm::mcPherson
+                   : Algorithm::rubberBand;
+    }
+
     void updateAlgorithmPitch() noexcept
     {
         const auto semitones = Octaver::getShiftInSemitones(shift_);
 
-        lowOctaveShifter_.setSemitones(semitones);
-        highOctaveShifter_.setSemitones(static_cast<float>(semitones));
+        mcPhersonShifter_.setSemitones(semitones);
+        rubberBandShifter_.setSemitones(static_cast<float>(semitones));
+    }
+
+    void resetActiveAlgorithm()
+    {
+        if (activeAlgorithm_ == Algorithm::rubberBand)
+            rubberBandShifter_.reset();
+        else
+            mcPhersonShifter_.reset();
     }
 
     Octaver::Shift shift_{Octaver::Shift::oneDown};
-    Algorithm activeAlgorithm_{Algorithm::mcPherson};
-    McPhersonPitchShifter lowOctaveShifter_;
-    WangRubberBandPitchShifter highOctaveShifter_;
+    Algorithm activeAlgorithm_{getAlgorithmForShift(shift_)};
+    McPhersonPitchShifter mcPhersonShifter_;
+    WangRubberBandPitchShifter rubberBandShifter_;
 };
 
 //==============================================================================

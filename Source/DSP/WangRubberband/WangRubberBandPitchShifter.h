@@ -48,6 +48,25 @@ public:
         }
 
         setMixPercentage (100.0f);
+        reset();
+    }
+
+    void reset()
+    {
+        if (rubberband != nullptr)
+        {
+            rubberband->reset();
+
+            const auto pitchScale = std::powf (2.0f, pitchParam / 12.0f);
+            rubberband->setPitchScale (pitchScale);
+            oldPitch = pitchScale;
+            pitchSmoothing.setCurrentAndTargetValue (pitchScale);
+            timeSmoothing.setCurrentAndTargetValue (1.0f);
+            mixSmoothing.setCurrentAndTargetValue (mixParam / 100.0f);
+        }
+
+        input.clear();
+        output.clear();
     }
 
     /** Pitch shift a juce::AudioBuffer<float>

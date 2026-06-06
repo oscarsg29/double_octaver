@@ -15,6 +15,24 @@ void McPhersonPitchShifter::prepare (juce::dsp::ProcessSpec& spec)
     needToResetPhases = true;
 }
 
+void McPhersonPitchShifter::reset()
+{
+    const auto targetShift = paramShift.getTargetValue();
+
+    paramShift.setCurrentAndTargetValue (targetShift);
+
+    inputBuffer.clear();
+    outputBuffer.clear();
+    inputPhase.clear();
+    outputPhase.clear();
+
+    inputBufferWritePosition = 0;
+    outputBufferReadPosition = 0;
+    outputBufferWritePosition = hopSize % outputBufferLength;
+    samplesSinceLastFFT = 0;
+    needToResetPhases = true;
+}
+
 void McPhersonPitchShifter::process (juce::AudioBuffer<float>& inBuffer)
 {
     int currentInputBufferWritePosition = 0;

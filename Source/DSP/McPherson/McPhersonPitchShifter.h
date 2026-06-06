@@ -10,6 +10,8 @@ public:
 
     void prepare (juce::dsp::ProcessSpec&);
 
+    void reset();
+
     float getScaleSemitone (float inValue)
     {
         return powf (2.0f, inValue / 12.0f);

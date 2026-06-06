@@ -23,6 +23,18 @@ public:
         pointerBuffer.setSize (numChannels, numSamples);
     }
 
+    void clear()
+    {
+        buffer.clear();
+        pointerBuffer.clear();
+
+        for (size_t i = 0; i < readPos.size(); i++)
+        {
+            readPos[i] = 0;
+            writePos[i] = 0;
+        }
+    }
+
     void pushSample (float sample, size_t channel)
     {
         buffer.setSample ((int) channel, writePos[(size_t) channel], sample);

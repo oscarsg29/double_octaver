@@ -46,9 +46,9 @@ class Octaver {
         return sample * octaveGainLinear_;
     }
 
-    [[nodiscard]] static bool isHighOctaveShift(Shift shift) noexcept
+    [[nodiscard]] static bool usesMcPhersonAlgorithm(Shift shift) noexcept
     {
-        return shift == Shift::oneUp || shift == Shift::twoUp;
+        return shift == Shift::oneDown;
     }
 
     [[nodiscard]] static int getShiftInSemitones(Shift shift) noexcept
