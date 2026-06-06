@@ -14,11 +14,11 @@
 //==============================================================================
 /**
 */
-class Curso032026AudioProcessorEditor  : public juce::AudioProcessorEditor
+class DoubleOctaverAudioProcessorEditor  : public juce::AudioProcessorEditor
 {
 public:
-    Curso032026AudioProcessorEditor (Curso032026AudioProcessor&);
-    ~Curso032026AudioProcessorEditor() override;
+    DoubleOctaverAudioProcessorEditor (DoubleOctaverAudioProcessor&);
+    ~DoubleOctaverAudioProcessorEditor() override;
 
     //==============================================================================
     void paint (juce::Graphics&) override;
@@ -27,7 +27,7 @@ public:
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
-    Curso032026AudioProcessor& audioProcessor;
+    DoubleOctaverAudioProcessor& audioProcessor;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Curso032026AudioProcessorEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DoubleOctaverAudioProcessorEditor)
 };

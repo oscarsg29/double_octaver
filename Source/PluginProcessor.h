@@ -23,11 +23,11 @@
 //==============================================================================
 /**
  */
-class Curso032026AudioProcessor : public juce::AudioProcessor {
+class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
   public:
     //==============================================================================
-    Curso032026AudioProcessor();
-    ~Curso032026AudioProcessor() override;
+    DoubleOctaverAudioProcessor();
+    ~DoubleOctaverAudioProcessor() override;
 
     //==============================================================================
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
@@ -82,5 +82,5 @@ class Curso032026AudioProcessor : public juce::AudioProcessor {
     // LPF_Biquad lpfBiquad;
     // Filters filters;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Curso032026AudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DoubleOctaverAudioProcessor)
 };
