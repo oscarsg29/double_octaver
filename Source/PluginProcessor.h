@@ -72,10 +72,13 @@ class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
 
     juce::AudioBuffer<float> dryBuffer;
     juce::AudioBuffer<float> octaveBuffer;
+    juce::AudioBuffer<float> octaveBuffer2;
 
     Gain gain{};
     Octaver octaver{};
+    Octaver octaver2{};
     std::unique_ptr<OctaverPitchShifter> octaverPitchShifter;
+    std::unique_ptr<OctaverPitchShifter> octaverPitchShifter2;
     // Panning panning;
     // LFO lfo;
     DryWet drywet;

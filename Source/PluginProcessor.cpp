@@ -112,6 +112,7 @@ DoubleOctaverAudioProcessor::DoubleOctaverAudioProcessor()
 #endif
 {
   octaverPitchShifter = std::make_unique<OctaverPitchShifter>();
+  octaverPitchShifter2 = std::make_unique<OctaverPitchShifter>();
 }
 
 DoubleOctaverAudioProcessor::~DoubleOctaverAudioProcessor() = default;
@@ -142,6 +143,15 @@ DoubleOctaverAudioProcessor::createParameters() {
   parameters.add(std::make_unique<juce::AudioParameterChoice>(
       juce::ParameterID("OctaveShift", 1), "OctaveShift",
       juce::StringArray("-2 Oct", "-1 Oct", "+1 Oct", "+2 Oct"), 1));
+
+  parameters.add(std::make_unique<juce::AudioParameterFloat>(
+      juce::ParameterID("OctaveGain2", 1), "OctaveGain2",
+      Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb,
+      Octaver::MinOctaveGainDb));
+
+  parameters.add(std::make_unique<juce::AudioParameterChoice>(
+      juce::ParameterID("OctaveShift2", 1), "OctaveShift2",
+      juce::StringArray("-2 Oct", "-1 Oct", "+1 Oct", "+2 Oct"), 0));
 
   /* parameters.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID("Int",
    1), "Int", 0, 100, 80));
@@ -213,6 +223,8 @@ void DoubleOctaverAudioProcessor::prepareToPlay(double sampleRate,
                                               int samplesPerBlock) {
   octaverPitchShifter->prepare(sampleRate, samplesPerBlock,
                                getTotalNumOutputChannels());
+  octaverPitchShifter2->prepare(sampleRate, samplesPerBlock,
+                                getTotalNumOutputChannels());
 
   // juce::dsp::ProcessSpec spec;
   // spec.sampleRate = sampleRate;
@@ -266,24 +278,34 @@ void DoubleOctaverAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 
   dryBuffer.makeCopyOf(buffer);
   octaveBuffer.makeCopyOf(buffer);
+  octaveBuffer2.makeCopyOf(buffer);
+
 
   (*octaverPitchShifter)(octaveBuffer);
+  (*octaverPitchShifter2)(octaveBuffer2);
 
   if (buffer.getNumChannels() == 1) {
     auto dryView = audio::MonoPolicy::makeView(dryBuffer);
     auto wetView = audio::MonoPolicy::makeView(octaveBuffer);
+    auto wetView2 = audio::MonoPolicy::makeView(octaveBuffer2);
     auto monoView = audio::MonoPolicy::makeView(buffer);
 
     dsp::transformSamples(wetView, octaver);
+    dsp::transformSamples(wetView2, octaver2);
+    octaveBuffer.addFrom(0, 0, octaveBuffer2, 0, 0, buffer.getNumSamples());
     dsp::combineSamples(monoView, dryView, wetView, drywet);
     dsp::transformSamples(monoView, gain);
 
   } else if (buffer.getNumChannels() == 2) {
     auto dryView = audio::StereoPolicy::makeView(dryBuffer);
     auto wetView = audio::StereoPolicy::makeView(octaveBuffer);
+    auto wetView2 = audio::StereoPolicy::makeView(octaveBuffer2);
     auto stereoView = audio::StereoPolicy::makeView(buffer);
 
     dsp::transformSamples(wetView, octaver);
+    dsp::transformSamples(wetView2, octaver2);
+    octaveBuffer.addFrom(0, 0, octaveBuffer2, 0, 0, buffer.getNumSamples());
+    octaveBuffer.addFrom(1, 0, octaveBuffer2, 1, 0, buffer.getNumSamples());
     dsp::combineSamples(stereoView, dryView, wetView, drywet);
     dsp::transformSamples(stereoView, gain);
   }
@@ -299,8 +321,11 @@ void DoubleOctaverAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
 void DoubleOctaverAudioProcessor::updateParameters() {
   gain.setGainDb(apvts.getRawParameterValue("Gain")->load());
   octaver.setOctaveGainDb(apvts.getRawParameterValue("OctaveGain")->load());
+  octaver2.setOctaveGainDb(apvts.getRawParameterValue("OctaveGain2")->load());
   octaverPitchShifter->setShiftFromChoiceIndex(
       static_cast<int>(apvts.getRawParameterValue("OctaveShift")->load()));
+  octaverPitchShifter2->setShiftFromChoiceIndex(
+      static_cast<int>(apvts.getRawParameterValue("OctaveShift2")->load()));
   // panning.setPanValue (apvts.getRawParameterValue("Panning")->load());
   // lfo.setFrequencyValue (apvts.getRawParameterValue("LFO")->load());
   drywet.setDryWetPercent(apvts.getRawParameterValue("DryWet")->load());
