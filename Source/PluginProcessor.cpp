@@ -153,6 +153,9 @@ DoubleOctaverAudioProcessor::createParameters() {
       juce::ParameterID("OctaveShift2", 1), "OctaveShift2",
       juce::StringArray("-2 Oct", "-1 Oct", "+1 Oct", "+2 Oct"), 0));
 
+  parameters.add(std::make_unique<juce::AudioParameterBool>(
+      juce::ParameterID("Power", 1), "Power", true));
+
   /* parameters.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID("Int",
    1), "Int", 0, 100, 80));
 
@@ -271,6 +274,9 @@ void DoubleOctaverAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                              juce::MidiBuffer &midiMessages) {
   juce::ignoreUnused(midiMessages);
 
+  if (apvts.getRawParameterValue("Power")->load() < 0.5f)
+    return;
+
   updateParameters();
 
   if (buffer.getNumChannels() == 0)
@@ -337,23 +343,23 @@ bool DoubleOctaverAudioProcessor::hasEditor() const {
 }
 
 juce::AudioProcessorEditor *DoubleOctaverAudioProcessor::createEditor() {
-  //    return new DoubleOctaverAudioProcessorEditor (*this);
-  return new juce::GenericAudioProcessorEditor(*this);
+  return new DoubleOctaverAudioProcessorEditor(*this);
 }
 
 //==============================================================================
 void DoubleOctaverAudioProcessor::getStateInformation(
     juce::MemoryBlock &destData) {
-  // You should use this method to store your parameters in the memory block.
-  // You could do that either as raw data, or use the XML or ValueTree classes
-  // as intermediaries to make it easy to save and load complex data.
+  if (auto state = apvts.copyState().createXml())
+    copyXmlToBinary(*state, destData);
 }
 
 void DoubleOctaverAudioProcessor::setStateInformation(const void *data,
                                                     int sizeInBytes) {
-  // You should use this method to restore your parameters from this memory
-  // block, whose contents will have been created by the getStateInformation()
-  // call.
+  if (auto state = getXmlFromBinary(data, sizeInBytes))
+  {
+    if (state->hasTagName(apvts.state.getType()))
+      apvts.replaceState(juce::ValueTree::fromXml(*state));
+  }
 }
 
 //==============================================================================
