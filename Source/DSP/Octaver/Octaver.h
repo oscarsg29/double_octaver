@@ -15,7 +15,7 @@
 
 class Octaver {
   public:
-    inline static constexpr float MinOctaveGainDb = -24.0f;
+    inline static constexpr float MinOctaveGainDb = -60.0f;
     inline static constexpr float MaxOctaveGainDb = 24.0f;
     inline static constexpr float DefaultOctaveGainDb = 0.0f;
 

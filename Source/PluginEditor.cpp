@@ -360,7 +360,7 @@ void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
     g.setFont(monoFont(9.0f));
     g.drawFittedText("OCT 1", 24, 91, 76, 12, juce::Justification::centred, 1);
     g.drawFittedText("OCT 2", 119, 91, 76, 12, juce::Justification::centred, 1);
-    g.drawFittedText("DRY", 236, 91, 76, 12, juce::Justification::centred, 1);
+    g.drawFittedText("MIX", 236, 91, 76, 12, juce::Justification::centred, 1);
     g.drawFittedText("MASTER", 236, 216, 76, 12, juce::Justification::centred, 1);
 
     g.setColour(juce::Colours::white.withAlpha(0.05f));

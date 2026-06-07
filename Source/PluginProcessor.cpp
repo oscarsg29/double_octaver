@@ -121,8 +121,11 @@ juce::AudioProcessorValueTreeState::ParameterLayout
 DoubleOctaverAudioProcessor::createParameters() {
   juce::AudioProcessorValueTreeState::ParameterLayout parameters;
 
+  constexpr auto gainKnobSkew = 1.5f;
+
   parameters.add(std::make_unique<juce::AudioParameterFloat>(
-      juce::ParameterID("Gain", 1), "Gain", Gain::MinGainDb, Gain::MaxGainDb,
+      juce::ParameterID("Gain", 1), "Gain",
+      juce::NormalisableRange<float>(Gain::MinGainDb, Gain::MaxGainDb, 0.0f, gainKnobSkew),
       Gain::UnityGainDb));
 
   /*parameters.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("Panning",
@@ -137,7 +140,7 @@ DoubleOctaverAudioProcessor::createParameters() {
 
   parameters.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID("OctaveGain", 1), "OctaveGain",
-      Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb,
+      juce::NormalisableRange<float>(Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb, 0.0f, gainKnobSkew),
       Octaver::DefaultOctaveGainDb));
 
   parameters.add(std::make_unique<juce::AudioParameterChoice>(
@@ -146,7 +149,7 @@ DoubleOctaverAudioProcessor::createParameters() {
 
   parameters.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID("OctaveGain2", 1), "OctaveGain2",
-      Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb,
+      juce::NormalisableRange<float>(Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb, 0.0f, gainKnobSkew),
       Octaver::DefaultOctaveGainDb));
 
   parameters.add(std::make_unique<juce::AudioParameterChoice>(
