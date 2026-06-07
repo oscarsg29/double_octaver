@@ -147,11 +147,11 @@ DoubleOctaverAudioProcessor::createParameters() {
   parameters.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID("OctaveGain2", 1), "OctaveGain2",
       Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb,
-      Octaver::MinOctaveGainDb));
+      Octaver::DefaultOctaveGainDb));
 
   parameters.add(std::make_unique<juce::AudioParameterChoice>(
       juce::ParameterID("OctaveShift2", 1), "OctaveShift2",
-      juce::StringArray("-2 Oct", "-1 Oct", "+1 Oct", "+2 Oct"), 0));
+      juce::StringArray("-2 Oct", "-1 Oct", "+1 Oct", "+2 Oct"), 2));
 
   parameters.add(std::make_unique<juce::AudioParameterBool>(
       juce::ParameterID("Power", 1), "Power", true));

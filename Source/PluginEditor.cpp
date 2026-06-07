@@ -287,7 +287,7 @@ DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOcta
     gainAttachment = std::make_unique<SliderAttachment>(audioProcessor.apvts, "Gain", gainSlider);
     powerAttachment = std::make_unique<ButtonAttachment>(audioProcessor.apvts, "Power", powerButton);
 
-    setSize (460, 380);
+    setSize (330, 380);
     startTimerHz(60);
 }
 
@@ -343,7 +343,7 @@ void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
     g.fillEllipse(led);
 
     g.setColour(juce::Colours::white.withAlpha(0.18f));
-    for (auto x : { 14.0f, 128.0f, 332.0f, 446.0f })
+    for (auto x : { 14.0f, 112.0f, 218.0f, static_cast<float>(getWidth() - 22) })
     {
         g.fillEllipse(x, 51.0f, 8.0f, 8.0f);
         g.setColour(juce::Colours::black.withAlpha(0.45f));
@@ -353,25 +353,25 @@ void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour(cream.withAlpha(0.24f));
     g.setFont(monoFont(8.5f));
-    g.drawFittedText("OCTAVE VOICES", 18, 70, 250, 16, juce::Justification::centredLeft, 1);
-    g.drawFittedText("OUTPUT", 324, 70, 100, 16, juce::Justification::centredLeft, 1);
+    g.drawFittedText("OCTAVE VOICES", 18, 70, 210, 16, juce::Justification::centredLeft, 1);
+    g.drawFittedText("OUTPUT", 236, 70, 74, 16, juce::Justification::centredLeft, 1);
 
     g.setColour(cream.withAlpha(0.50f));
     g.setFont(monoFont(9.0f));
-    g.drawFittedText("OCT 1", 27, 91, 76, 12, juce::Justification::centred, 1);
-    g.drawFittedText("OCT 2", 150, 91, 76, 12, juce::Justification::centred, 1);
-    g.drawFittedText("DRY", 333, 91, 76, 12, juce::Justification::centred, 1);
-    g.drawFittedText("MASTER", 333, 216, 76, 12, juce::Justification::centred, 1);
+    g.drawFittedText("OCT 1", 24, 91, 76, 12, juce::Justification::centred, 1);
+    g.drawFittedText("OCT 2", 119, 91, 76, 12, juce::Justification::centred, 1);
+    g.drawFittedText("DRY", 236, 91, 76, 12, juce::Justification::centred, 1);
+    g.drawFittedText("MASTER", 236, 216, 76, 12, juce::Justification::centred, 1);
 
     g.setColour(juce::Colours::white.withAlpha(0.05f));
-    g.drawHorizontalLine(90, 18.0f, 290.0f);
-    g.drawHorizontalLine(90, 324.0f, 440.0f);
+    g.drawHorizontalLine(90, 18.0f, 226.0f);
+    g.drawHorizontalLine(90, 236.0f, static_cast<float>(getWidth() - 20));
 
-    juce::ColourGradient divider(juce::Colours::transparentBlack, 299.0f, 65.0f,
-                                 juce::Colours::white.withAlpha(0.08f), 299.0f, 150.0f,
+    juce::ColourGradient divider(juce::Colours::transparentBlack, 219.0f, 65.0f,
+                                 juce::Colours::white.withAlpha(0.08f), 219.0f, 150.0f,
                                  false);
     g.setGradientFill(divider);
-    g.drawVerticalLine(300, 65.0f, static_cast<float>(getHeight() - 42));
+    g.drawVerticalLine(220, 65.0f, static_cast<float>(getHeight() - 42));
 
     auto footer = getLocalBounds().removeFromBottom(30).toFloat();
     g.setColour(stripColour());
@@ -381,27 +381,27 @@ void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour(cream.withAlpha(0.18f));
     g.setFont(monoFont(8.0f));
-    g.drawFittedText("PITCH SHIFT ENGINE", 14, getHeight() - 22, 150, 14,
+    g.drawFittedText("PITCH SHIFT ENGINE", 14, getHeight() - 22, 126, 14,
                      juce::Justification::centredLeft, 1);
 
-    drawStatusDot(g, { 330.0f, static_cast<float>(getHeight() - 15) }, cream, true, "DRY");
-    drawStatusDot(g, { 366.0f, static_cast<float>(getHeight() - 15) }, accent, powerOn, "V1");
-    drawStatusDot(g, { 397.0f, static_cast<float>(getHeight() - 15) }, blue, powerOn, "V2");
-    drawStatusDot(g, { 429.0f, static_cast<float>(getHeight() - 15) }, green, powerOn, "OUT");
+    drawStatusDot(g, { 180.0f, static_cast<float>(getHeight() - 15) }, cream, true, "DRY");
+    drawStatusDot(g, { 217.0f, static_cast<float>(getHeight() - 15) }, accent, powerOn, "V1");
+    drawStatusDot(g, { 250.0f, static_cast<float>(getHeight() - 15) }, blue, powerOn, "V2");
+    drawStatusDot(g, { 283.0f, static_cast<float>(getHeight() - 15) }, green, powerOn, "OUT");
 }
 
 void DoubleOctaverAudioProcessorEditor::resized()
 {
     powerButton.setBounds(getWidth() - 61, 12, 38, 18);
 
-    octaveGainSlider.setBounds(27, 96, 76, 94);
-    octaveSelector->setBounds(18, 194, 94, 150);
+    octaveGainSlider.setBounds(24, 96, 76, 94);
+    octaveSelector->setBounds(15, 194, 94, 150);
 
-    octaveGain2Slider.setBounds(150, 96, 76, 94);
-    octaveSelector2->setBounds(141, 194, 94, 150);
+    octaveGain2Slider.setBounds(119, 96, 76, 94);
+    octaveSelector2->setBounds(110, 194, 94, 150);
 
-    dryWetSlider.setBounds(333, 106, 76, 92);
-    gainSlider.setBounds(333, 231, 76, 92);
+    dryWetSlider.setBounds(236, 106, 76, 92);
+    gainSlider.setBounds(236, 231, 76, 92);
 }
 
 void DoubleOctaverAudioProcessorEditor::timerCallback()

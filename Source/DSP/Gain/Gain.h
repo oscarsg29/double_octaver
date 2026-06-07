@@ -15,8 +15,8 @@
 
 class Gain {
   public:
-    inline static constexpr float MinGainDb = -60.0f;
-    inline static constexpr float MaxGainDb = 12.0f;
+    inline static constexpr float MinGainDb = -24.0f;
+    inline static constexpr float MaxGainDb = 24.0f;
     inline static constexpr float UnityGainDb = 0.0f;
 
     explicit Gain(float gainDb = UnityGainDb) noexcept { setGainDb(gainDb); }
