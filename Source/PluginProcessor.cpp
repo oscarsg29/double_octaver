@@ -1,11 +1,3 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
@@ -51,8 +43,6 @@ class DoubleOctaverAudioProcessor::OctaverPitchShifter {
         }
     }
 
-    [[nodiscard]] Octaver::Shift getShift() const noexcept { return shift_; }
-
     void operator()(juce::AudioBuffer<float>& buffer)
     {
         if (activeAlgorithm_ == Algorithm::rubberBand)
@@ -96,7 +86,6 @@ class DoubleOctaverAudioProcessor::OctaverPitchShifter {
     WangRubberBandPitchShifter rubberBandShifter_;
 };
 
-//==============================================================================
 DoubleOctaverAudioProcessor::DoubleOctaverAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
     : AudioProcessor(
@@ -128,12 +117,6 @@ DoubleOctaverAudioProcessor::createParameters() {
       juce::NormalisableRange<float>(Gain::MinGainDb, Gain::MaxGainDb, 0.0f, gainKnobSkew),
       Gain::UnityGainDb));
 
-  /*parameters.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("Panning",
-  1), "Panning", -100.0f, 100.0f, 0.0f));
-
-  parameters.add(std::make_unique<juce::AudioParameterFloat>(juce::ParameterID("LFO",
-  1), "LFO", 0.01f, 20.0f, 20.0f));*/
-
   parameters.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID("DryWet", 1), "DryWet", DryWet::MinDryWetPercent,
       DryWet::MaxDryWetPercent, DryWet::DefaultDryWetPercent));
@@ -159,23 +142,9 @@ DoubleOctaverAudioProcessor::createParameters() {
   parameters.add(std::make_unique<juce::AudioParameterBool>(
       juce::ParameterID("Power", 1), "Power", true));
 
-  /* parameters.add(std::make_unique<juce::AudioParameterInt>(juce::ParameterID("Int",
-   1), "Int", 0, 100, 80));
-
-   parameters.add (std::make_unique<juce::AudioParameterBool> (juce::ParameterID
-   ("Bool", 1), "Bool", true));
-
-   parameters.add (std::make_unique<juce::AudioParameterChoice>
-   (juce::ParameterID ("Choice", 1), "Choice", juce::StringArray ("Sine", "Saw",
-                                                                                    "Square",
-                                                                                    "Triangle"),
-                                                                 0));
-    */
-
   return parameters;
 }
 
-//==============================================================================
 const juce::String DoubleOctaverAudioProcessor::getName() const {
   return JucePlugin_Name;
 }
@@ -207,44 +176,30 @@ bool DoubleOctaverAudioProcessor::isMidiEffect() const {
 double DoubleOctaverAudioProcessor::getTailLengthSeconds() const { return 0.0; }
 
 int DoubleOctaverAudioProcessor::getNumPrograms() {
-  return 1; // NB: some hosts don't cope very well if you tell them there are 0
-            // programs, so this should be at least 1, even if you're not really
-            // implementing programs.
+  return 1;
 }
 
 int DoubleOctaverAudioProcessor::getCurrentProgram() { return 0; }
 
-void DoubleOctaverAudioProcessor::setCurrentProgram(int index) {}
+void DoubleOctaverAudioProcessor::setCurrentProgram(int) {}
 
-const juce::String DoubleOctaverAudioProcessor::getProgramName(int index) {
+const juce::String DoubleOctaverAudioProcessor::getProgramName(int) {
   return {};
 }
 
-void DoubleOctaverAudioProcessor::changeProgramName(int index,
-                                                  const juce::String &newName) {
+void DoubleOctaverAudioProcessor::changeProgramName(int,
+                                                  const juce::String &) {
 }
 
-//==============================================================================
 void DoubleOctaverAudioProcessor::prepareToPlay(double sampleRate,
                                               int samplesPerBlock) {
   octaverPitchShifter->prepare(sampleRate, samplesPerBlock,
                                getTotalNumOutputChannels());
   octaverPitchShifter2->prepare(sampleRate, samplesPerBlock,
                                 getTotalNumOutputChannels());
-
-  // juce::dsp::ProcessSpec spec;
-  // spec.sampleRate = sampleRate;
-  // spec.maximumBlockSize = samplesPerBlock;
-  // spec.numChannels = getTotalNumOutputChannels();
-  //
-  // lfo.prepare (sampleRate);
-  // lpfBiquad.prepare (sampleRate);
-  // filters.prepare (spec);
 }
 
 void DoubleOctaverAudioProcessor::releaseResources() {
-  // When playback stops, you can use this as an opportunity to free up any
-  // spare memory, etc.
 }
 
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -254,15 +209,10 @@ bool DoubleOctaverAudioProcessor::isBusesLayoutSupported(
   juce::ignoreUnused(layouts);
   return true;
 #else
-  // This is the place where you check if the layout is supported.
-  // In this template code we only support mono or stereo.
-  // Some plugin hosts, such as certain GarageBand versions, will only
-  // load plugins that support stereo bus layouts.
   if (layouts.getMainOutputChannelSet() != juce::AudioChannelSet::mono() &&
       layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
     return false;
 
-    // This checks if the input layout matches the output layout
 #if !JucePlugin_IsSynth
   if (layouts.getMainOutputChannelSet() != layouts.getMainInputChannelSet())
     return false;
@@ -288,7 +238,6 @@ void DoubleOctaverAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   dryBuffer.makeCopyOf(buffer);
   octaveBuffer.makeCopyOf(buffer);
   octaveBuffer2.makeCopyOf(buffer);
-
 
   (*octaverPitchShifter)(octaveBuffer);
   (*octaverPitchShifter2)(octaveBuffer2);
@@ -318,13 +267,6 @@ void DoubleOctaverAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
     dsp::combineSamples(stereoView, dryView, wetView, drywet);
     dsp::transformSamples(stereoView, gain);
   }
-
-  // panning.process (buffer);
-  // lfo.process (buffer);
-  // lpfBiquad.process (buffer);
-  // filters.processLowpass (buffer);
-  // filters.processHighpass (buffer);
-  // filters.processBandpass (buffer);
 }
 
 void DoubleOctaverAudioProcessor::updateParameters() {
@@ -335,21 +277,17 @@ void DoubleOctaverAudioProcessor::updateParameters() {
       static_cast<int>(apvts.getRawParameterValue("OctaveShift")->load()));
   octaverPitchShifter2->setShiftFromChoiceIndex(
       static_cast<int>(apvts.getRawParameterValue("OctaveShift2")->load()));
-  // panning.setPanValue (apvts.getRawParameterValue("Panning")->load());
-  // lfo.setFrequencyValue (apvts.getRawParameterValue("LFO")->load());
   drywet.setDryWetPercent(apvts.getRawParameterValue("DryWet")->load());
 }
 
-//==============================================================================
 bool DoubleOctaverAudioProcessor::hasEditor() const {
-  return true; // (change this to false if you choose to not supply an editor)
+  return true;
 }
 
 juce::AudioProcessorEditor *DoubleOctaverAudioProcessor::createEditor() {
   return new DoubleOctaverAudioProcessorEditor(*this);
 }
 
-//==============================================================================
 void DoubleOctaverAudioProcessor::getStateInformation(
     juce::MemoryBlock &destData) {
   if (auto state = apvts.copyState().createXml())
@@ -365,8 +303,6 @@ void DoubleOctaverAudioProcessor::setStateInformation(const void *data,
   }
 }
 
-//==============================================================================
-// This creates new instances of the plugin..
 juce::AudioProcessor *JUCE_CALLTYPE createPluginFilter() {
   return new DoubleOctaverAudioProcessor();
 }

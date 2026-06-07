@@ -1,19 +1,8 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin editor.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
 
-//==============================================================================
-/**
-*/
 class DoubleOctaverAudioProcessorEditor  : public juce::AudioProcessorEditor
                                           , private juce::Timer
 {
@@ -21,7 +10,6 @@ public:
     DoubleOctaverAudioProcessorEditor (DoubleOctaverAudioProcessor&);
     ~DoubleOctaverAudioProcessorEditor() override;
 
-    //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
 

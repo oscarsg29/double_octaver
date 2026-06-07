@@ -1,35 +1,19 @@
-/*
-  ==============================================================================
-
-    This file contains the basic framework code for a JUCE plugin processor.
-
-  ==============================================================================
-*/
-
 #pragma once
-//#include "DSP/Biquad.h"
+
 #include "DSP/ChannelsView/MonoPolicy.h"
 #include "DSP/ChannelsView/StereoPolicy.h"
 #include "DSP/DryWet.h"
-//#include "DSP/Filters.h"
 #include "DSP/Gain/Gain.h"
-//#include "DSP/LFO/LFO.h"
 #include "DSP/Octaver/Octaver.h"
-//#include "DSP/Panning.h"
 #include "DSP/SamplesProcessor.h"
 #include <JuceHeader.h>
 #include <memory>
 
-//==============================================================================
-/**
- */
 class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
   public:
-    //==============================================================================
     DoubleOctaverAudioProcessor();
     ~DoubleOctaverAudioProcessor() override;
 
-    //==============================================================================
     void prepareToPlay(double sampleRate, int samplesPerBlock) override;
     void releaseResources() override;
 
@@ -39,11 +23,9 @@ class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
 
     void processBlock(juce::AudioBuffer<float> &, juce::MidiBuffer &) override;
 
-    //==============================================================================
     juce::AudioProcessorEditor *createEditor() override;
     bool hasEditor() const override;
 
-    //==============================================================================
     const juce::String getName() const override;
 
     bool acceptsMidi() const override;
@@ -51,14 +33,12 @@ class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
     bool isMidiEffect() const override;
     double getTailLengthSeconds() const override;
 
-    //==============================================================================
     int getNumPrograms() override;
     int getCurrentProgram() override;
     void setCurrentProgram(int index) override;
     const juce::String getProgramName(int index) override;
     void changeProgramName(int index, const juce::String &newName) override;
 
-    //==============================================================================
     void getStateInformation(juce::MemoryBlock &destData) override;
     void setStateInformation(const void *data, int sizeInBytes) override;
 
@@ -79,11 +59,7 @@ class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
     Octaver octaver2{};
     std::unique_ptr<OctaverPitchShifter> octaverPitchShifter;
     std::unique_ptr<OctaverPitchShifter> octaverPitchShifter2;
-    // Panning panning;
-    // LFO lfo;
     DryWet drywet;
-    // LPF_Biquad lpfBiquad;
-    // Filters filters;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DoubleOctaverAudioProcessor)
 };
