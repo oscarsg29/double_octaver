@@ -120,6 +120,31 @@ public:
     }
 };
 
+class DoubleOctaverAudioProcessorEditor::BypassButtonLookAndFeel
+    : public juce::LookAndFeel_V4
+{
+public:
+    void drawToggleButton(juce::Graphics& g, juce::ToggleButton& button,
+                          bool shouldDrawButtonAsHighlighted,
+                          bool shouldDrawButtonAsDown) override
+    {
+        juce::ignoreUnused(shouldDrawButtonAsHighlighted, shouldDrawButtonAsDown);
+
+        auto bounds = button.getLocalBounds().toFloat().reduced(1.0f);
+        const auto active = button.getToggleState();
+        const auto colour = button.findColour(juce::ToggleButton::tickColourId);
+
+        g.setColour(active ? colour.withAlpha(0.24f) : juce::Colour::fromRGB(0x18, 0x18, 0x1f));
+        g.fillRoundedRectangle(bounds, 4.0f);
+        g.setColour(active ? colour.withAlpha(0.70f) : juce::Colours::white.withAlpha(0.10f));
+        g.drawRoundedRectangle(bounds, 4.0f, 1.0f);
+
+        g.setColour(active ? colour : cream.withAlpha(0.42f));
+        g.setFont(monoFont(8.5f));
+        g.drawFittedText("BYP", button.getLocalBounds(), juce::Justification::centred, 1);
+    }
+};
+
 class DoubleOctaverAudioProcessorEditor::OctaveSelector
     : public juce::Component,
       private juce::Timer
@@ -248,6 +273,7 @@ DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOcta
 {
     rotaryLookAndFeel = new RotaryLookAndFeel();
     powerButtonLookAndFeel = new PowerButtonLookAndFeel();
+    bypassButtonLookAndFeel = new BypassButtonLookAndFeel();
 
     configureSlider(octaveGainSlider, " dB");
     configureSlider(octaveGain2Slider, " dB");
@@ -273,11 +299,23 @@ DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOcta
     powerButton.setToggleState(true, juce::dontSendNotification);
     addAndMakeVisible(powerButton);
 
+    octaveBypassButton.setLookAndFeel(bypassButtonLookAndFeel);
+    octaveBypassButton.setColour(juce::ToggleButton::tickColourId, accent);
+    octaveBypassButton.setClickingTogglesState(true);
+    addAndMakeVisible(octaveBypassButton);
+
+    octaveBypass2Button.setLookAndFeel(bypassButtonLookAndFeel);
+    octaveBypass2Button.setColour(juce::ToggleButton::tickColourId, blue);
+    octaveBypass2Button.setClickingTogglesState(true);
+    addAndMakeVisible(octaveBypass2Button);
+
     octaveGainAttachment = std::make_unique<SliderAttachment>(audioProcessor.apvts, "OctaveGain", octaveGainSlider);
     octaveGain2Attachment = std::make_unique<SliderAttachment>(audioProcessor.apvts, "OctaveGain2", octaveGain2Slider);
     dryWetAttachment = std::make_unique<SliderAttachment>(audioProcessor.apvts, "DryWet", dryWetSlider);
     gainAttachment = std::make_unique<SliderAttachment>(audioProcessor.apvts, "Gain", gainSlider);
     powerAttachment = std::make_unique<ButtonAttachment>(audioProcessor.apvts, "Power", powerButton);
+    octaveBypassAttachment = std::make_unique<ButtonAttachment>(audioProcessor.apvts, "OctaveBypass", octaveBypassButton);
+    octaveBypass2Attachment = std::make_unique<ButtonAttachment>(audioProcessor.apvts, "OctaveBypass2", octaveBypass2Button);
 
     setSize (330, 380);
     startTimerHz(60);
@@ -288,6 +326,8 @@ DoubleOctaverAudioProcessorEditor::~DoubleOctaverAudioProcessorEditor()
     stopTimer();
 
     powerButton.setLookAndFeel(nullptr);
+    octaveBypassButton.setLookAndFeel(nullptr);
+    octaveBypass2Button.setLookAndFeel(nullptr);
     octaveGainSlider.setLookAndFeel(nullptr);
     octaveGain2Slider.setLookAndFeel(nullptr);
     dryWetSlider.setLookAndFeel(nullptr);
@@ -295,6 +335,7 @@ DoubleOctaverAudioProcessorEditor::~DoubleOctaverAudioProcessorEditor()
 
     delete octaveSelector;
     delete octaveSelector2;
+    delete bypassButtonLookAndFeel;
     delete powerButtonLookAndFeel;
     delete rotaryLookAndFeel;
 }
@@ -328,6 +369,8 @@ void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
     //g.drawFittedText("v1.1", 109, 15, 45, 14, juce::Justification::centredLeft, 1);
 
     const auto powerOn = audioProcessor.apvts.getRawParameterValue("Power")->load() > 0.5f;
+    const auto voice1On = powerOn && audioProcessor.apvts.getRawParameterValue("OctaveBypass")->load() < 0.5f;
+    const auto voice2On = powerOn && audioProcessor.apvts.getRawParameterValue("OctaveBypass2")->load() < 0.5f;
     auto led = juce::Rectangle<float>(getWidth() - 83.0f, 18.0f, 6.0f, 6.0f);
     g.setColour(powerOn ? accent.withAlpha(0.25f) : juce::Colours::transparentBlack);
     g.fillEllipse(led.expanded(4.0f));
@@ -377,8 +420,8 @@ void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
                      juce::Justification::centredLeft, 1);
 
     drawStatusDot(g, { 180.0f, static_cast<float>(getHeight() - 15) }, cream, true, "DRY");
-    drawStatusDot(g, { 217.0f, static_cast<float>(getHeight() - 15) }, accent, powerOn, "V1");
-    drawStatusDot(g, { 250.0f, static_cast<float>(getHeight() - 15) }, blue, powerOn, "V2");
+    drawStatusDot(g, { 217.0f, static_cast<float>(getHeight() - 15) }, accent, voice1On, "V1");
+    drawStatusDot(g, { 250.0f, static_cast<float>(getHeight() - 15) }, blue, voice2On, "V2");
     drawStatusDot(g, { 283.0f, static_cast<float>(getHeight() - 15) }, green, powerOn, "OUT");
 }
 
@@ -387,10 +430,12 @@ void DoubleOctaverAudioProcessorEditor::resized()
     powerButton.setBounds(getWidth() - 61, 12, 38, 18);
 
     octaveGainSlider.setBounds(24, 106, 76, 94);
-    octaveSelector->setBounds(15, 204, 94, 150);
+    octaveSelector->setBounds(15, 204, 94, 118);
+    octaveBypassButton.setBounds(30, 326, 64, 18);
 
     octaveGain2Slider.setBounds(119, 106, 76, 94);
-    octaveSelector2->setBounds(110, 204, 94, 150);
+    octaveSelector2->setBounds(110, 204, 94, 118);
+    octaveBypass2Button.setBounds(125, 326, 64, 18);
 
     dryWetSlider.setBounds(236, 106, 76, 92);
     gainSlider.setBounds(236, 231, 76, 92);
@@ -399,15 +444,21 @@ void DoubleOctaverAudioProcessorEditor::resized()
 void DoubleOctaverAudioProcessorEditor::timerCallback()
 {
     const auto powerOn = audioProcessor.apvts.getRawParameterValue("Power")->load() > 0.5f;
+    const auto voice1Bypassed = audioProcessor.apvts.getRawParameterValue("OctaveBypass")->load() > 0.5f;
+    const auto voice2Bypassed = audioProcessor.apvts.getRawParameterValue("OctaveBypass2")->load() > 0.5f;
     const auto targetAlpha = powerOn ? 1.0f : 0.35f;
     controlsAlpha += (targetAlpha - controlsAlpha) * 0.18f;
+    const auto voice1Alpha = controlsAlpha * (voice1Bypassed ? 0.35f : 1.0f);
+    const auto voice2Alpha = controlsAlpha * (voice2Bypassed ? 0.35f : 1.0f);
 
-    octaveGainSlider.setAlpha(controlsAlpha);
-    octaveGain2Slider.setAlpha(controlsAlpha);
+    octaveGainSlider.setAlpha(voice1Alpha);
+    octaveGain2Slider.setAlpha(voice2Alpha);
     dryWetSlider.setAlpha(controlsAlpha);
     gainSlider.setAlpha(controlsAlpha);
-    octaveSelector->setAlpha(controlsAlpha);
-    octaveSelector2->setAlpha(controlsAlpha);
+    octaveSelector->setAlpha(voice1Alpha);
+    octaveSelector2->setAlpha(voice2Alpha);
+    octaveBypassButton.setAlpha(controlsAlpha);
+    octaveBypass2Button.setAlpha(controlsAlpha);
 
     repaint();
 }

@@ -15,6 +15,7 @@ public:
 
 private:
     class OctaveSelector;
+    class BypassButtonLookAndFeel;
     class PowerButtonLookAndFeel;
     class RotaryLookAndFeel;
 
@@ -30,6 +31,7 @@ private:
 
     RotaryLookAndFeel* rotaryLookAndFeel = nullptr;
     PowerButtonLookAndFeel* powerButtonLookAndFeel = nullptr;
+    BypassButtonLookAndFeel* bypassButtonLookAndFeel = nullptr;
 
     juce::Slider octaveGainSlider;
     juce::Slider octaveGain2Slider;
@@ -39,12 +41,16 @@ private:
     OctaveSelector* octaveSelector = nullptr;
     OctaveSelector* octaveSelector2 = nullptr;
     juce::ToggleButton powerButton;
+    juce::ToggleButton octaveBypassButton;
+    juce::ToggleButton octaveBypass2Button;
 
     std::unique_ptr<SliderAttachment> octaveGainAttachment;
     std::unique_ptr<SliderAttachment> octaveGain2Attachment;
     std::unique_ptr<SliderAttachment> dryWetAttachment;
     std::unique_ptr<SliderAttachment> gainAttachment;
     std::unique_ptr<ButtonAttachment> powerAttachment;
+    std::unique_ptr<ButtonAttachment> octaveBypassAttachment;
+    std::unique_ptr<ButtonAttachment> octaveBypass2Attachment;
 
     float controlsAlpha = 1.0f;
 

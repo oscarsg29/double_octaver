@@ -60,6 +60,8 @@ class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
     std::unique_ptr<OctaverPitchShifter> octaverPitchShifter;
     std::unique_ptr<OctaverPitchShifter> octaverPitchShifter2;
     DryWet drywet;
+    bool octaveBypassed = false;
+    bool octave2Bypassed = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DoubleOctaverAudioProcessor)
 };
