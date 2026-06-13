@@ -39,11 +39,6 @@ public:
         const auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
         const auto colour = slider.findColour(juce::Slider::thumbColourId);
 
-        if (slider.isMouseButtonDown())
-        {
-            g.setColour(colour.withAlpha(0.22f));
-            g.fillEllipse(bounds.expanded(5.0f));
-        }
 
         juce::ColourGradient outer(juce::Colour::fromRGB(0x3c, 0x3c, 0x46),
                                    centre.x - radius * 0.3f, centre.y - radius * 0.4f,
@@ -179,9 +174,6 @@ public:
 
         g.setColour(colour.withAlpha(0.78f));
         g.setFont(monoFont(10.0f));
-        g.drawFittedText(options[static_cast<size_t>(selectedIndex)] + " OCT",
-                         getLocalBounds().removeFromBottom(16),
-                         juce::Justification::centred, 1);
     }
 
     void resized() override
@@ -330,10 +322,10 @@ void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour(accent);
     g.setFont(titleFont(18.0f));
-    g.drawFittedText("OCTAVER", 14, 10, 130, 20, juce::Justification::centredLeft, 1);
+    g.drawFittedText("DOUBLE OCTAVER", 14, 10, 130, 20, juce::Justification::centredLeft, 1);
     g.setColour(cream.withAlpha(0.30f));
     g.setFont(monoFont(9.0f));
-    g.drawFittedText("v1.1", 109, 15, 45, 14, juce::Justification::centredLeft, 1);
+    //g.drawFittedText("v1.1", 109, 15, 45, 14, juce::Justification::centredLeft, 1);
 
     const auto powerOn = audioProcessor.apvts.getRawParameterValue("Power")->load() > 0.5f;
     auto led = juce::Rectangle<float>(getWidth() - 83.0f, 18.0f, 6.0f, 6.0f);
@@ -358,13 +350,13 @@ void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour(cream.withAlpha(0.50f));
     g.setFont(monoFont(9.0f));
-    g.drawFittedText("OCT 1", 24, 91, 76, 12, juce::Justification::centred, 1);
-    g.drawFittedText("OCT 2", 119, 91, 76, 12, juce::Justification::centred, 1);
-    g.drawFittedText("MIX", 236, 91, 76, 12, juce::Justification::centred, 1);
-    g.drawFittedText("MASTER", 236, 216, 76, 12, juce::Justification::centred, 1);
+    g.drawFittedText("GAIN", 24, 96, 76, 12, juce::Justification::centred, 1);
+    g.drawFittedText("GAIN", 119, 96, 76, 12, juce::Justification::centred, 1);
+    g.drawFittedText("MIX", 236, 96, 76, 12, juce::Justification::centred, 1);
+    g.drawFittedText("MASTER", 236, 221, 76, 12, juce::Justification::centred, 1);
 
     g.setColour(juce::Colours::white.withAlpha(0.05f));
-    g.drawHorizontalLine(90, 18.0f, 226.0f);
+    g.drawHorizontalLine(90, 18.0f, 204.0f);
     g.drawHorizontalLine(90, 236.0f, static_cast<float>(getWidth() - 20));
 
     juce::ColourGradient divider(juce::Colours::transparentBlack, 219.0f, 65.0f,
