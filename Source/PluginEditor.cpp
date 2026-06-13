@@ -386,11 +386,11 @@ void DoubleOctaverAudioProcessorEditor::resized()
 {
     powerButton.setBounds(getWidth() - 61, 12, 38, 18);
 
-    octaveGainSlider.setBounds(24, 96, 76, 94);
-    octaveSelector->setBounds(15, 194, 94, 150);
+    octaveGainSlider.setBounds(24, 106, 76, 94);
+    octaveSelector->setBounds(15, 204, 94, 150);
 
-    octaveGain2Slider.setBounds(119, 96, 76, 94);
-    octaveSelector2->setBounds(110, 194, 94, 150);
+    octaveGain2Slider.setBounds(119, 106, 76, 94);
+    octaveSelector2->setBounds(110, 204, 94, 150);
 
     dryWetSlider.setBounds(236, 106, 76, 92);
     gainSlider.setBounds(236, 231, 76, 92);

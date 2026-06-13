@@ -114,7 +114,7 @@ DoubleOctaverAudioProcessor::createParameters() {
 
   parameters.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID("Gain", 1), "Gain",
-      juce::NormalisableRange<float>(Gain::MinGainDb, Gain::MaxGainDb, 0.0f, gainKnobSkew),
+      juce::NormalisableRange<float>(Gain::MinGainDb, Gain::MaxGainDb, 0.1f, gainKnobSkew),
       Gain::UnityGainDb));
 
   parameters.add(std::make_unique<juce::AudioParameterFloat>(
@@ -123,7 +123,7 @@ DoubleOctaverAudioProcessor::createParameters() {
 
   parameters.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID("OctaveGain", 1), "OctaveGain",
-      juce::NormalisableRange<float>(Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb, 0.0f, gainKnobSkew),
+      juce::NormalisableRange<float>(Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb, 0.1f, gainKnobSkew),
       Octaver::DefaultOctaveGainDb));
 
   parameters.add(std::make_unique<juce::AudioParameterChoice>(
@@ -132,7 +132,7 @@ DoubleOctaverAudioProcessor::createParameters() {
 
   parameters.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID("OctaveGain2", 1), "OctaveGain2",
-      juce::NormalisableRange<float>(Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb, 0.0f, gainKnobSkew),
+      juce::NormalisableRange<float>(Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb, 0.1f, gainKnobSkew),
       Octaver::DefaultOctaveGainDb));
 
   parameters.add(std::make_unique<juce::AudioParameterChoice>(
