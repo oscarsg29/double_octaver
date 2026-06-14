@@ -69,7 +69,8 @@ DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOcta
                                    static_cast<int>(gui::layout::editor::height * gui::layout::editor::maxScale));
     }
 
-    setSize (gui::layout::editor::width, gui::layout::editor::height);
+    setSize (static_cast<int>(gui::layout::editor::width * gui::layout::editor::defaultScale),
+             static_cast<int>(gui::layout::editor::height * gui::layout::editor::defaultScale));
     startTimerHz(60);
 }
 
