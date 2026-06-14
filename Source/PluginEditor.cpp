@@ -58,6 +58,17 @@ DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOcta
                                                         parameters::power,
                                                         powerButton);
 
+    setResizable(true, true);
+    if (auto* constrainer = getConstrainer())
+    {
+        constrainer->setFixedAspectRatio(static_cast<double>(gui::layout::editor::width)
+                                         / static_cast<double>(gui::layout::editor::height));
+        constrainer->setSizeLimits(gui::layout::editor::width,
+                                   gui::layout::editor::height,
+                                   static_cast<int>(gui::layout::editor::width * gui::layout::editor::maxScale),
+                                   static_cast<int>(gui::layout::editor::height * gui::layout::editor::maxScale));
+    }
+
     setSize (gui::layout::editor::width, gui::layout::editor::height);
     startTimerHz(60);
 }
@@ -83,6 +94,8 @@ void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
     const auto voice1On = powerOn && voice1Controls->isActive();
     const auto voice2On = powerOn && voice2Controls->isActive();
 
+    g.addTransform(juce::AffineTransform::scale(getContentScale()));
+
     drawPanel(g);
     drawHeader(g, powerOn);
     drawSectionLabels(g);
@@ -93,7 +106,10 @@ void DoubleOctaverAudioProcessorEditor::drawPanel(juce::Graphics& g)
 {
     g.fillAll(juce::Colour::fromRGB(0x0f, 0x0f, 0x12));
 
-    auto bounds = getLocalBounds().toFloat().reduced(1.0f);
+    auto bounds = juce::Rectangle<float>(0.0f, 0.0f,
+                                         static_cast<float>(gui::layout::editor::width),
+                                         static_cast<float>(gui::layout::editor::height))
+                      .reduced(1.0f);
     juce::ColourGradient panel(gui::theme::panelTop(), bounds.getX(), bounds.getY(),
                                gui::theme::panelBottom(), bounds.getRight(), bounds.getBottom(), false);
     g.setGradientFill(panel);
@@ -104,14 +120,17 @@ void DoubleOctaverAudioProcessorEditor::drawPanel(juce::Graphics& g)
 
 void DoubleOctaverAudioProcessorEditor::drawHeader(juce::Graphics& g, bool powerOn)
 {
-    auto header = getLocalBounds().removeFromTop(gui::layout::header::height).toFloat();
+    auto header = juce::Rectangle<float>(0.0f, 0.0f,
+                                         static_cast<float>(gui::layout::editor::width),
+                                         static_cast<float>(gui::layout::header::height));
     juce::ColourGradient headerGradient(gui::theme::stripColour(), header.getX(), header.getCentreY(),
                                         juce::Colour::fromRGB(0x1c, 0x1c, 0x21),
                                         header.getCentreX(), header.getCentreY(), false);
     g.setGradientFill(headerGradient);
     g.fillRect(header);
     g.setColour(juce::Colours::white.withAlpha(0.06f));
-    g.drawHorizontalLine(gui::layout::header::height, 0.0f, static_cast<float>(getWidth()));
+    g.drawHorizontalLine(gui::layout::header::height, 0.0f,
+                         static_cast<float>(gui::layout::editor::width));
 
     g.setColour(gui::theme::accent);
     g.setFont(gui::theme::titleFont(18.0f));
@@ -119,7 +138,7 @@ void DoubleOctaverAudioProcessorEditor::drawHeader(juce::Graphics& g, bool power
                      gui::layout::header::titleWidth, gui::layout::header::titleHeight,
                      juce::Justification::centredLeft, 1);
 
-    auto led = juce::Rectangle<float>(getWidth() - gui::layout::header::powerLedRightMargin,
+    auto led = juce::Rectangle<float>(gui::layout::editor::width - gui::layout::header::powerLedRightMargin,
                                       gui::layout::header::powerLedY,
                                       gui::layout::header::powerLedSize,
                                       gui::layout::header::powerLedSize);
@@ -132,7 +151,7 @@ void DoubleOctaverAudioProcessorEditor::drawHeader(juce::Graphics& g, bool power
     for (auto x : { gui::layout::header::screw1X,
                     gui::layout::header::screw2X,
                     gui::layout::header::screw3X,
-                    static_cast<float>(getWidth() - gui::layout::header::screwRightMargin) })
+                    static_cast<float>(gui::layout::editor::width - gui::layout::header::screwRightMargin) })
     {
         g.fillEllipse(x, gui::layout::header::screwY,
                       gui::layout::header::screwSize, gui::layout::header::screwSize);
@@ -180,7 +199,7 @@ void DoubleOctaverAudioProcessorEditor::drawSectionLabels(juce::Graphics& g)
                          gui::layout::voices::ruleEndX);
     g.drawHorizontalLine(gui::layout::sections::ruleY,
                          gui::layout::output::ruleStartX,
-                         static_cast<float>(getWidth() - gui::layout::output::ruleRightMargin));
+                         static_cast<float>(gui::layout::editor::width - gui::layout::output::ruleRightMargin));
 
     juce::ColourGradient divider(juce::Colours::transparentBlack,
                                  gui::layout::divider::gradientX,
@@ -192,26 +211,30 @@ void DoubleOctaverAudioProcessorEditor::drawSectionLabels(juce::Graphics& g)
     g.setGradientFill(divider);
     g.drawVerticalLine(gui::layout::divider::x,
                        gui::layout::divider::topY,
-                       static_cast<float>(getHeight() - gui::layout::divider::bottomMargin));
+                       static_cast<float>(gui::layout::editor::height - gui::layout::divider::bottomMargin));
 }
 
 void DoubleOctaverAudioProcessorEditor::drawFooter(juce::Graphics& g, bool powerOn,
                                                    bool voice1On, bool voice2On)
 {
-    auto footer = getLocalBounds().removeFromBottom(gui::layout::footer::height).toFloat();
+    auto footer = juce::Rectangle<float>(0.0f,
+                                         static_cast<float>(gui::layout::editor::height - gui::layout::footer::height),
+                                         static_cast<float>(gui::layout::editor::width),
+                                         static_cast<float>(gui::layout::footer::height));
     g.setColour(gui::theme::stripColour());
     g.fillRect(footer);
     g.setColour(juce::Colours::white.withAlpha(0.05f));
-    g.drawHorizontalLine(getHeight() - gui::layout::footer::height, 0.0f, static_cast<float>(getWidth()));
+    g.drawHorizontalLine(gui::layout::editor::height - gui::layout::footer::height,
+                         0.0f, static_cast<float>(gui::layout::editor::width));
 
     g.setColour(gui::theme::cream.withAlpha(0.18f));
     g.setFont(gui::theme::monoFont(8.0f));
     g.drawFittedText("PITCH SHIFT ENGINE", gui::layout::footer::textX,
-                     getHeight() - gui::layout::footer::textBottomMargin,
+                     gui::layout::editor::height - gui::layout::footer::textBottomMargin,
                      gui::layout::footer::textWidth, gui::layout::footer::textHeight,
                      juce::Justification::centredLeft, 1);
 
-    const auto statusY = static_cast<float>(getHeight() - gui::layout::status::dotBottomMargin);
+    const auto statusY = static_cast<float>(gui::layout::editor::height - gui::layout::status::dotBottomMargin);
     drawStatusDot(g, { gui::layout::status::dryX, statusY }, gui::theme::cream, true, "DRY");
     drawStatusDot(g, { gui::layout::status::voice1X, statusY }, gui::theme::accent, voice1On, "V1");
     drawStatusDot(g, { gui::layout::status::voice2X, statusY }, gui::theme::blue, voice2On, "V2");
@@ -220,7 +243,15 @@ void DoubleOctaverAudioProcessorEditor::drawFooter(juce::Graphics& g, bool power
 
 void DoubleOctaverAudioProcessorEditor::resized()
 {
-    powerButton.setBounds(getWidth() - gui::layout::powerButton::rightMargin,
+    const auto transform = juce::AffineTransform::scale(getContentScale());
+
+    powerButton.setTransform(transform);
+    dryWetSlider.setTransform(transform);
+    gainSlider.setTransform(transform);
+    voice1Controls->setTransform(transform);
+    voice2Controls->setTransform(transform);
+
+    powerButton.setBounds(gui::layout::editor::width - gui::layout::powerButton::rightMargin,
                           gui::layout::powerButton::y,
                           gui::layout::powerButton::width,
                           gui::layout::powerButton::height);
@@ -234,6 +265,11 @@ void DoubleOctaverAudioProcessorEditor::resized()
                            gui::layout::controls::knobWidth, gui::layout::output::knobHeight);
     gainSlider.setBounds(gui::layout::output::x, gui::layout::output::masterY,
                          gui::layout::controls::knobWidth, gui::layout::output::knobHeight);
+}
+
+float DoubleOctaverAudioProcessorEditor::getContentScale() const noexcept
+{
+    return static_cast<float>(getWidth()) / static_cast<float>(gui::layout::editor::width);
 }
 
 void DoubleOctaverAudioProcessorEditor::timerCallback()

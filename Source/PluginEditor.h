@@ -26,6 +26,7 @@ private:
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
 
     void timerCallback() override;
+    float getContentScale() const noexcept;
     void configureSlider(juce::Slider& slider, const juce::String& suffix, juce::Colour thumbColour);
     void drawPanel(juce::Graphics& g);
     void drawHeader(juce::Graphics& g, bool powerOn);

@@ -6,6 +6,10 @@ namespace editor
 {
 constexpr int width = 330;
 constexpr int height = 380;
+
+// Update this value to change the maximum GUI resize scale.
+// Example: 2.0f allows up to 660x760, 3.0f allows up to 990x1140.
+constexpr float maxScale = 2.0f;
 }
 
 namespace header
