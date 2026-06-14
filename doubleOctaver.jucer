@@ -12,6 +12,18 @@
       <FILE id="IGERdD" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="vk2BwH" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="pId001" name="ParameterIds.h" compile="0" resource="0" file="Source/ParameterIds.h"/>
+      <GROUP id="{9A8F76E5-82E3-4B0D-9A58-0E64F30A7A56}" name="GUI">
+        <FILE id="gui001" name="Layout.h" compile="0" resource="0" file="Source/GUI/Layout.h"/>
+        <FILE id="gui002" name="LookAndFeels.cpp" compile="1" resource="0" file="Source/GUI/LookAndFeels.cpp"/>
+        <FILE id="gui003" name="LookAndFeels.h" compile="0" resource="0" file="Source/GUI/LookAndFeels.h"/>
+        <FILE id="gui004" name="OctaveSelector.cpp" compile="1" resource="0" file="Source/GUI/OctaveSelector.cpp"/>
+        <FILE id="gui005" name="OctaveSelector.h" compile="0" resource="0" file="Source/GUI/OctaveSelector.h"/>
+        <FILE id="gui006" name="SliderConfig.h" compile="0" resource="0" file="Source/GUI/SliderConfig.h"/>
+        <FILE id="gui007" name="Theme.h" compile="0" resource="0" file="Source/GUI/Theme.h"/>
+        <FILE id="gui008" name="VoiceControls.cpp" compile="1" resource="0" file="Source/GUI/VoiceControls.cpp"/>
+        <FILE id="gui009" name="VoiceControls.h" compile="0" resource="0" file="Source/GUI/VoiceControls.h"/>
+      </GROUP>
     </GROUP>
     <GROUP id="{2D537CC0-F77A-F231-E5B7-CB93AA669F50}" name="DSP">
       <GROUP id="{3B603E64-AA54-10BF-5575-DABD87139853}" name="WangRubberband">
