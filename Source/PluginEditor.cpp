@@ -13,6 +13,8 @@ namespace parameters = double_octaver::parameters;
 DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOctaverAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
+    auto& parameterState = audioProcessor.getValueTreeState();
+
     rotaryLookAndFeel = std::make_unique<gui::RotaryLookAndFeel>();
     powerButtonLookAndFeel = std::make_unique<gui::PowerButtonLookAndFeel>();
     bypassButtonLookAndFeel = std::make_unique<gui::BypassButtonLookAndFeel>();
@@ -23,7 +25,7 @@ DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOcta
     addAndMakeVisible(dryWetSlider);
     addAndMakeVisible(gainSlider);
 
-    voice1Controls = std::make_unique<gui::VoiceControls>(audioProcessor.apvts,
+    voice1Controls = std::make_unique<gui::VoiceControls>(parameterState,
                                                           parameters::octaveGain1,
                                                           parameters::octaveShift1,
                                                           parameters::octaveBypass1,
@@ -31,7 +33,7 @@ DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOcta
                                                           gui::theme::accent,
                                                           *rotaryLookAndFeel,
                                                           *bypassButtonLookAndFeel);
-    voice2Controls = std::make_unique<gui::VoiceControls>(audioProcessor.apvts,
+    voice2Controls = std::make_unique<gui::VoiceControls>(parameterState,
                                                           parameters::octaveGain2,
                                                           parameters::octaveShift2,
                                                           parameters::octaveBypass2,
@@ -46,17 +48,17 @@ DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOcta
     powerButton.setToggleState(true, juce::dontSendNotification);
     addAndMakeVisible(powerButton);
 
-    dryWetAttachment = std::make_unique<SliderAttachment>(audioProcessor.apvts,
+    dryWetAttachment = std::make_unique<SliderAttachment>(parameterState,
                                                           parameters::dryWet,
                                                           dryWetSlider);
-    gainAttachment = std::make_unique<SliderAttachment>(audioProcessor.apvts,
+    gainAttachment = std::make_unique<SliderAttachment>(parameterState,
                                                         parameters::gain,
                                                         gainSlider);
-    powerAttachment = std::make_unique<ButtonAttachment>(audioProcessor.apvts,
+    powerAttachment = std::make_unique<ButtonAttachment>(parameterState,
                                                         parameters::power,
                                                         powerButton);
 
-    setSize (gui::layout::editorWidth, gui::layout::editorHeight);
+    setSize (gui::layout::editor::width, gui::layout::editor::height);
     startTimerHz(60);
 }
 
@@ -77,7 +79,7 @@ DoubleOctaverAudioProcessorEditor::~DoubleOctaverAudioProcessorEditor()
 
 void DoubleOctaverAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    const auto powerOn = audioProcessor.apvts.getRawParameterValue(parameters::power)->load() > 0.5f;
+    const auto powerOn = audioProcessor.getValueTreeState().getRawParameterValue(parameters::power)->load() > 0.5f;
     const auto voice1On = powerOn && voice1Controls->isActive();
     const auto voice2On = powerOn && voice2Controls->isActive();
 
@@ -102,42 +104,43 @@ void DoubleOctaverAudioProcessorEditor::drawPanel(juce::Graphics& g)
 
 void DoubleOctaverAudioProcessorEditor::drawHeader(juce::Graphics& g, bool powerOn)
 {
-    auto header = getLocalBounds().removeFromTop(gui::layout::headerHeight).toFloat();
+    auto header = getLocalBounds().removeFromTop(gui::layout::header::height).toFloat();
     juce::ColourGradient headerGradient(gui::theme::stripColour(), header.getX(), header.getCentreY(),
                                         juce::Colour::fromRGB(0x1c, 0x1c, 0x21),
                                         header.getCentreX(), header.getCentreY(), false);
     g.setGradientFill(headerGradient);
     g.fillRect(header);
     g.setColour(juce::Colours::white.withAlpha(0.06f));
-    g.drawHorizontalLine(gui::layout::headerHeight, 0.0f, static_cast<float>(getWidth()));
+    g.drawHorizontalLine(gui::layout::header::height, 0.0f, static_cast<float>(getWidth()));
 
     g.setColour(gui::theme::accent);
     g.setFont(gui::theme::titleFont(18.0f));
-    g.drawFittedText("DOUBLE OCTAVER", gui::layout::titleX, gui::layout::titleY,
-                     gui::layout::titleWidth, gui::layout::titleHeight,
+    g.drawFittedText("DOUBLE OCTAVER", gui::layout::header::titleX, gui::layout::header::titleY,
+                     gui::layout::header::titleWidth, gui::layout::header::titleHeight,
                      juce::Justification::centredLeft, 1);
 
-    auto led = juce::Rectangle<float>(getWidth() - gui::layout::powerLedRightMargin,
-                                      gui::layout::powerLedY,
-                                      gui::layout::powerLedSize,
-                                      gui::layout::powerLedSize);
+    auto led = juce::Rectangle<float>(getWidth() - gui::layout::header::powerLedRightMargin,
+                                      gui::layout::header::powerLedY,
+                                      gui::layout::header::powerLedSize,
+                                      gui::layout::header::powerLedSize);
     g.setColour(powerOn ? gui::theme::accent.withAlpha(0.25f) : juce::Colours::transparentBlack);
     g.fillEllipse(led.expanded(4.0f));
     g.setColour(powerOn ? gui::theme::accent : juce::Colour::fromRGB(0x33, 0x33, 0x33));
     g.fillEllipse(led);
 
     g.setColour(juce::Colours::white.withAlpha(0.18f));
-    for (auto x : { gui::layout::screw1X,
-                    gui::layout::screw2X,
-                    gui::layout::screw3X,
-                    static_cast<float>(getWidth() - gui::layout::screwRightMargin) })
+    for (auto x : { gui::layout::header::screw1X,
+                    gui::layout::header::screw2X,
+                    gui::layout::header::screw3X,
+                    static_cast<float>(getWidth() - gui::layout::header::screwRightMargin) })
     {
-        g.fillEllipse(x, gui::layout::screwY, gui::layout::screwSize, gui::layout::screwSize);
+        g.fillEllipse(x, gui::layout::header::screwY,
+                      gui::layout::header::screwSize, gui::layout::header::screwSize);
         g.setColour(juce::Colours::black.withAlpha(0.45f));
-        g.drawLine(x + gui::layout::screwSlotInset,
-                   gui::layout::screwSlotY,
-                   x + gui::layout::screwSize - gui::layout::screwSlotInset,
-                   gui::layout::screwSlotY,
+        g.drawLine(x + gui::layout::header::screwSlotInset,
+                   gui::layout::header::screwSlotY,
+                   x + gui::layout::header::screwSize - gui::layout::header::screwSlotInset,
+                   gui::layout::header::screwSlotY,
                    1.0f);
         g.setColour(juce::Colours::white.withAlpha(0.18f));
     }
@@ -147,87 +150,95 @@ void DoubleOctaverAudioProcessorEditor::drawSectionLabels(juce::Graphics& g)
 {
     g.setColour(gui::theme::cream.withAlpha(0.24f));
     g.setFont(gui::theme::monoFont(8.5f));
-    g.drawFittedText("OCTAVE VOICES", gui::layout::voicesSectionLabelX,
-                     gui::layout::sectionLabelY, gui::layout::voicesSectionLabelWidth,
-                     gui::layout::sectionLabelHeight, juce::Justification::centredLeft, 1);
-    g.drawFittedText("OUTPUT", gui::layout::outputX, gui::layout::sectionLabelY,
-                     gui::layout::outputSectionLabelWidth, gui::layout::sectionLabelHeight,
+    g.drawFittedText("OCTAVE VOICES", gui::layout::voices::sectionLabelX,
+                     gui::layout::sections::labelY, gui::layout::voices::sectionLabelWidth,
+                     gui::layout::sections::labelHeight, juce::Justification::centredLeft, 1);
+    g.drawFittedText("OUTPUT", gui::layout::output::x, gui::layout::sections::labelY,
+                     gui::layout::output::sectionLabelWidth, gui::layout::sections::labelHeight,
                      juce::Justification::centredLeft, 1);
 
     g.setColour(gui::theme::cream.withAlpha(0.50f));
     g.setFont(gui::theme::monoFont(9.0f));
-    g.drawFittedText("GAIN", gui::layout::voice1X + gui::layout::voiceKnobX, gui::layout::controlLabelY,
-                     gui::layout::knobWidth, gui::layout::labelHeight, juce::Justification::centred, 1);
-    g.drawFittedText("GAIN", gui::layout::voice2X + gui::layout::voiceKnobX, gui::layout::controlLabelY,
-                     gui::layout::knobWidth, gui::layout::labelHeight, juce::Justification::centred, 1);
-    g.drawFittedText("MIX", gui::layout::outputX, gui::layout::controlLabelY,
-                     gui::layout::knobWidth, gui::layout::labelHeight, juce::Justification::centred, 1);
-    g.drawFittedText("MASTER", gui::layout::outputX, gui::layout::masterLabelY,
-                     gui::layout::knobWidth, gui::layout::labelHeight, juce::Justification::centred, 1);
+    g.drawFittedText("GAIN", gui::layout::voices::firstX + gui::layout::voiceControl::knobX,
+                     gui::layout::controls::labelY,
+                     gui::layout::controls::knobWidth, gui::layout::controls::labelHeight,
+                     juce::Justification::centred, 1);
+    g.drawFittedText("GAIN", gui::layout::voices::secondX + gui::layout::voiceControl::knobX,
+                     gui::layout::controls::labelY,
+                     gui::layout::controls::knobWidth, gui::layout::controls::labelHeight,
+                     juce::Justification::centred, 1);
+    g.drawFittedText("MIX", gui::layout::output::x, gui::layout::controls::labelY,
+                     gui::layout::controls::knobWidth, gui::layout::controls::labelHeight,
+                     juce::Justification::centred, 1);
+    g.drawFittedText("MASTER", gui::layout::output::x, gui::layout::controls::masterLabelY,
+                     gui::layout::controls::knobWidth, gui::layout::controls::labelHeight,
+                     juce::Justification::centred, 1);
 
     g.setColour(juce::Colours::white.withAlpha(0.05f));
-    g.drawHorizontalLine(gui::layout::sectionRuleY,
-                         gui::layout::voicesRuleStartX,
-                         gui::layout::voicesRuleEndX);
-    g.drawHorizontalLine(gui::layout::sectionRuleY,
-                         gui::layout::outputRuleStartX,
-                         static_cast<float>(getWidth() - gui::layout::outputRuleRightMargin));
+    g.drawHorizontalLine(gui::layout::sections::ruleY,
+                         gui::layout::voices::ruleStartX,
+                         gui::layout::voices::ruleEndX);
+    g.drawHorizontalLine(gui::layout::sections::ruleY,
+                         gui::layout::output::ruleStartX,
+                         static_cast<float>(getWidth() - gui::layout::output::ruleRightMargin));
 
     juce::ColourGradient divider(juce::Colours::transparentBlack,
-                                 gui::layout::dividerGradientX,
-                                 gui::layout::dividerGradientTopY,
+                                 gui::layout::divider::gradientX,
+                                 gui::layout::divider::gradientTopY,
                                  juce::Colours::white.withAlpha(0.08f),
-                                 gui::layout::dividerGradientX,
-                                 gui::layout::dividerGradientBottomY,
+                                 gui::layout::divider::gradientX,
+                                 gui::layout::divider::gradientBottomY,
                                  false);
     g.setGradientFill(divider);
-    g.drawVerticalLine(gui::layout::dividerX,
-                       gui::layout::dividerTopY,
-                       static_cast<float>(getHeight() - gui::layout::dividerBottomMargin));
+    g.drawVerticalLine(gui::layout::divider::x,
+                       gui::layout::divider::topY,
+                       static_cast<float>(getHeight() - gui::layout::divider::bottomMargin));
 }
 
 void DoubleOctaverAudioProcessorEditor::drawFooter(juce::Graphics& g, bool powerOn,
                                                    bool voice1On, bool voice2On)
 {
-    auto footer = getLocalBounds().removeFromBottom(gui::layout::footerHeight).toFloat();
+    auto footer = getLocalBounds().removeFromBottom(gui::layout::footer::height).toFloat();
     g.setColour(gui::theme::stripColour());
     g.fillRect(footer);
     g.setColour(juce::Colours::white.withAlpha(0.05f));
-    g.drawHorizontalLine(getHeight() - gui::layout::footerHeight, 0.0f, static_cast<float>(getWidth()));
+    g.drawHorizontalLine(getHeight() - gui::layout::footer::height, 0.0f, static_cast<float>(getWidth()));
 
     g.setColour(gui::theme::cream.withAlpha(0.18f));
     g.setFont(gui::theme::monoFont(8.0f));
-    g.drawFittedText("PITCH SHIFT ENGINE", gui::layout::footerTextX,
-                     getHeight() - gui::layout::footerTextBottomMargin,
-                     gui::layout::footerTextWidth, gui::layout::footerTextHeight,
+    g.drawFittedText("PITCH SHIFT ENGINE", gui::layout::footer::textX,
+                     getHeight() - gui::layout::footer::textBottomMargin,
+                     gui::layout::footer::textWidth, gui::layout::footer::textHeight,
                      juce::Justification::centredLeft, 1);
 
-    const auto statusY = static_cast<float>(getHeight() - gui::layout::statusDotBottomMargin);
-    drawStatusDot(g, { gui::layout::dryStatusDotX, statusY }, gui::theme::cream, true, "DRY");
-    drawStatusDot(g, { gui::layout::voice1StatusDotX, statusY }, gui::theme::accent, voice1On, "V1");
-    drawStatusDot(g, { gui::layout::voice2StatusDotX, statusY }, gui::theme::blue, voice2On, "V2");
-    drawStatusDot(g, { gui::layout::outputStatusDotX, statusY }, gui::theme::green, powerOn, "OUT");
+    const auto statusY = static_cast<float>(getHeight() - gui::layout::status::dotBottomMargin);
+    drawStatusDot(g, { gui::layout::status::dryX, statusY }, gui::theme::cream, true, "DRY");
+    drawStatusDot(g, { gui::layout::status::voice1X, statusY }, gui::theme::accent, voice1On, "V1");
+    drawStatusDot(g, { gui::layout::status::voice2X, statusY }, gui::theme::blue, voice2On, "V2");
+    drawStatusDot(g, { gui::layout::status::outputX, statusY }, gui::theme::green, powerOn, "OUT");
 }
 
 void DoubleOctaverAudioProcessorEditor::resized()
 {
-    powerButton.setBounds(getWidth() - gui::layout::powerButtonRightMargin, gui::layout::powerButtonY,
-                          gui::layout::powerButtonWidth, gui::layout::powerButtonHeight);
+    powerButton.setBounds(getWidth() - gui::layout::powerButton::rightMargin,
+                          gui::layout::powerButton::y,
+                          gui::layout::powerButton::width,
+                          gui::layout::powerButton::height);
 
-    voice1Controls->setBounds(gui::layout::voice1X, gui::layout::voiceY,
-                              gui::layout::voiceWidth, gui::layout::voiceHeight);
-    voice2Controls->setBounds(gui::layout::voice2X, gui::layout::voiceY,
-                              gui::layout::voiceWidth, gui::layout::voiceHeight);
+    voice1Controls->setBounds(gui::layout::voices::firstX, gui::layout::voices::y,
+                              gui::layout::voices::width, gui::layout::voices::height);
+    voice2Controls->setBounds(gui::layout::voices::secondX, gui::layout::voices::y,
+                              gui::layout::voices::width, gui::layout::voices::height);
 
-    dryWetSlider.setBounds(gui::layout::outputX, gui::layout::mixY,
-                           gui::layout::knobWidth, gui::layout::outputKnobHeight);
-    gainSlider.setBounds(gui::layout::outputX, gui::layout::masterY,
-                         gui::layout::knobWidth, gui::layout::outputKnobHeight);
+    dryWetSlider.setBounds(gui::layout::output::x, gui::layout::output::mixY,
+                           gui::layout::controls::knobWidth, gui::layout::output::knobHeight);
+    gainSlider.setBounds(gui::layout::output::x, gui::layout::output::masterY,
+                         gui::layout::controls::knobWidth, gui::layout::output::knobHeight);
 }
 
 void DoubleOctaverAudioProcessorEditor::timerCallback()
 {
-    const auto powerOn = audioProcessor.apvts.getRawParameterValue(parameters::power)->load() > 0.5f;
+    const auto powerOn = audioProcessor.getValueTreeState().getRawParameterValue(parameters::power)->load() > 0.5f;
     const auto targetAlpha = powerOn ? 1.0f : 0.35f;
     controlsAlpha += (targetAlpha - controlsAlpha) * 0.18f;
 

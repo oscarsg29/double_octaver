@@ -17,14 +17,14 @@ public:
 private:
     void timerCallback() override;
     juce::Rectangle<int> getSelectorBounds() const;
-    int getParameterIndex() const;
     void setParameterIndex(int index);
+    void updateSelectedIndex(float index);
 
-    juce::RangedAudioParameter* parameter = nullptr;
     juce::String name;
     juce::Colour colour;
     std::array<juce::TextButton, 4> buttons;
     std::array<juce::String, 4> options { "-2", "-1", "+1", "+2" };
+    std::unique_ptr<juce::ParameterAttachment> parameterAttachment;
     int selectedIndex = 0;
     float indicatorPosition = 0.0f;
 };

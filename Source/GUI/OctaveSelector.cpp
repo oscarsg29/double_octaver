@@ -7,11 +7,18 @@ OctaveSelector::OctaveSelector(juce::AudioProcessorValueTreeState& state,
                                const juce::String& parameterId,
                                juce::String selectorName,
                                juce::Colour accentColour)
-    : parameter(state.getParameter(parameterId)),
-      name(std::move(selectorName)),
+    : name(std::move(selectorName)),
       colour(accentColour)
 {
+    auto* parameter = state.getParameter(parameterId);
     jassert(parameter != nullptr);
+
+    if (parameter != nullptr)
+    {
+        parameterAttachment = std::make_unique<juce::ParameterAttachment>(
+            *parameter,
+            [this](float value) { updateSelectedIndex(value); });
+    }
 
     for (auto i = 0; i < buttons.size(); ++i)
     {
@@ -22,7 +29,10 @@ OctaveSelector::OctaveSelector(juce::AudioProcessorValueTreeState& state,
         addAndMakeVisible(button);
     }
 
-    startTimerHz(60);
+    if (parameterAttachment != nullptr)
+        parameterAttachment->sendInitialUpdate();
+
+    startTimerHz(30);
 }
 
 void OctaveSelector::paint(juce::Graphics& g)
@@ -67,12 +77,29 @@ void OctaveSelector::resized()
 
 void OctaveSelector::timerCallback()
 {
-    const auto nextIndex = getParameterIndex();
-    if (nextIndex != selectedIndex)
-        selectedIndex = nextIndex;
-
     const auto target = static_cast<float>(selectedIndex);
     indicatorPosition += (target - indicatorPosition) * 0.24f;
+
+    repaint();
+}
+
+juce::Rectangle<int> OctaveSelector::getSelectorBounds() const
+{
+    auto bounds = getLocalBounds().withTrimmedTop(19).withTrimmedBottom(15);
+    return bounds.withSizeKeepingCentre(58, juce::jmax(56, bounds.getHeight()));
+}
+
+void OctaveSelector::setParameterIndex(int index)
+{
+    if (parameterAttachment == nullptr)
+        return;
+
+    parameterAttachment->setValueAsCompleteGesture(static_cast<float>(index));
+}
+
+void OctaveSelector::updateSelectedIndex(float index)
+{
+    selectedIndex = juce::jlimit(0, 3, static_cast<int>(std::round(index)));
 
     for (auto i = 0; i < buttons.size(); ++i)
     {
@@ -87,29 +114,5 @@ void OctaveSelector::timerCallback()
     }
 
     repaint();
-}
-
-juce::Rectangle<int> OctaveSelector::getSelectorBounds() const
-{
-    auto bounds = getLocalBounds().withTrimmedTop(19).withTrimmedBottom(15);
-    return bounds.withSizeKeepingCentre(58, juce::jmax(56, bounds.getHeight()));
-}
-
-int OctaveSelector::getParameterIndex() const
-{
-    if (parameter == nullptr)
-        return 0;
-
-    return juce::jlimit(0, 3, static_cast<int>(std::round(parameter->convertFrom0to1(parameter->getValue()))));
-}
-
-void OctaveSelector::setParameterIndex(int index)
-{
-    if (parameter == nullptr)
-        return;
-
-    parameter->beginChangeGesture();
-    parameter->setValueNotifyingHost(parameter->convertTo0to1(static_cast<float>(index)));
-    parameter->endChangeGesture();
 }
 }

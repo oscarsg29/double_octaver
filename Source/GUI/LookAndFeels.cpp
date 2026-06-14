@@ -106,6 +106,6 @@ void BypassButtonLookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleBu
 
     g.setColour(active ? colour : theme::cream.withAlpha(0.42f));
     g.setFont(theme::monoFont(8.5f));
-    g.drawFittedText("BYP", button.getLocalBounds(), juce::Justification::centred, 1);
+    g.drawFittedText("BYPASS", button.getLocalBounds(), juce::Justification::centred, 1);
 }
 }

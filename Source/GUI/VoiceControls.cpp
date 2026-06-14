@@ -25,33 +25,33 @@ VoiceControls::VoiceControls(juce::AudioProcessorValueTreeState& state,
     bypassButton.setLookAndFeel(&bypassButtonLookAndFeel);
     bypassButton.setColour(juce::ToggleButton::tickColourId, voiceColour);
     bypassButton.setClickingTogglesState(true);
+    bypassButton.onStateChange = [this] { updateControlAlpha(); };
     addAndMakeVisible(bypassButton);
 
     gainAttachment = std::make_unique<SliderAttachment>(state, gainParameterId, gainSlider);
     bypassAttachment = std::make_unique<ButtonAttachment>(state, bypassParameterId, bypassButton);
-
-    startTimerHz(60);
 }
 
 VoiceControls::~VoiceControls()
 {
-    stopTimer();
     bypassButton.setLookAndFeel(nullptr);
     gainSlider.setLookAndFeel(nullptr);
 }
 
 void VoiceControls::resized()
 {
-    gainSlider.setBounds(layout::voiceKnobX, layout::voiceKnobY,
-                         layout::knobWidth, layout::gainKnobHeight);
-    selector->setBounds(0, layout::selectorY, layout::voiceWidth, layout::selectorHeight);
-    bypassButton.setBounds(layout::bypassX, layout::bypassY,
-                           layout::bypassWidth, layout::bypassHeight);
+    gainSlider.setBounds(layout::voiceControl::knobX, layout::voiceControl::knobY,
+                         layout::controls::knobWidth, layout::voiceControl::gainKnobHeight);
+    selector->setBounds(0, layout::voiceControl::selectorY,
+                        layout::voices::width, layout::voiceControl::selectorHeight);
+    bypassButton.setBounds(layout::voiceControl::bypassX, layout::voiceControl::bypassY,
+                           layout::voiceControl::bypassWidth, layout::voiceControl::bypassHeight);
 }
 
 void VoiceControls::setPowerAlpha(float alpha)
 {
     powerAlpha = alpha;
+    updateControlAlpha();
 }
 
 bool VoiceControls::isActive() const
@@ -59,7 +59,7 @@ bool VoiceControls::isActive() const
     return bypassParameter != nullptr && bypassParameter->load() < 0.5f;
 }
 
-void VoiceControls::timerCallback()
+void VoiceControls::updateControlAlpha()
 {
     const auto controlAlpha = powerAlpha * (isActive() ? 1.0f : 0.35f);
     gainSlider.setAlpha(controlAlpha);

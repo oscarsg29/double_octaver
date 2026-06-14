@@ -9,6 +9,11 @@
 #include <JuceHeader.h>
 #include <memory>
 
+namespace double_octaver::pitch
+{
+class OctaveVoiceProcessor;
+}
+
 class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
   public:
     DoubleOctaverAudioProcessor();
@@ -42,26 +47,20 @@ class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
     void getStateInformation(juce::MemoryBlock &destData) override;
     void setStateInformation(const void *data, int sizeInBytes) override;
 
-    juce::AudioProcessorValueTreeState apvts;
-    juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
+    juce::AudioProcessorValueTreeState& getValueTreeState() noexcept;
+    const juce::AudioProcessorValueTreeState& getValueTreeState() const noexcept;
 
   private:
-    class OctaverPitchShifter;
-
+    static juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
     void updateParameters();
 
+    juce::AudioProcessorValueTreeState apvts;
     juce::AudioBuffer<float> dryBuffer;
-    juce::AudioBuffer<float> octaveBuffer;
-    juce::AudioBuffer<float> octaveBuffer2;
 
     Gain gain{};
-    Octaver octaver{};
-    Octaver octaver2{};
-    std::unique_ptr<OctaverPitchShifter> octaverPitchShifter;
-    std::unique_ptr<OctaverPitchShifter> octaverPitchShifter2;
+    std::unique_ptr<double_octaver::pitch::OctaveVoiceProcessor> voice1;
+    std::unique_ptr<double_octaver::pitch::OctaveVoiceProcessor> voice2;
     DryWet drywet;
-    bool octaveBypassed = false;
-    bool octave2Bypassed = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DoubleOctaverAudioProcessor)
 };

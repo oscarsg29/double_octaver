@@ -48,6 +48,10 @@
         <FILE id="KYgQbG" name="Gain.h" compile="0" resource="0" file="Source/DSP/Gain/Gain.h"/>
       </GROUP>
       <GROUP id="{17B665C4-7055-4A14-9480-42D25593B338}" name="Octaver">
+        <FILE id="oct003" name="OctaveVoiceProcessor.cpp" compile="1" resource="0" file="Source/DSP/Octaver/OctaveVoiceProcessor.cpp"/>
+        <FILE id="oct004" name="OctaveVoiceProcessor.h" compile="0" resource="0" file="Source/DSP/Octaver/OctaveVoiceProcessor.h"/>
+        <FILE id="oct001" name="OctaverPitchShifter.cpp" compile="1" resource="0" file="Source/DSP/Octaver/OctaverPitchShifter.cpp"/>
+        <FILE id="oct002" name="OctaverPitchShifter.h" compile="0" resource="0" file="Source/DSP/Octaver/OctaverPitchShifter.h"/>
         <FILE id="Q8eHku" name="Octaver.h" compile="0" resource="0" file="Source/DSP/Octaver/Octaver.h"/>
       </GROUP>
       <GROUP id="{BE7C9C41-16CE-C227-3031-ACD107C2DF1F}" name="LFO">

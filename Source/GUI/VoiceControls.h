@@ -6,8 +6,7 @@
 
 namespace double_octaver::gui
 {
-class VoiceControls : public juce::Component,
-                      private juce::Timer
+class VoiceControls : public juce::Component
 {
 public:
     VoiceControls(juce::AudioProcessorValueTreeState& state,
@@ -26,8 +25,8 @@ public:
     bool isActive() const;
 
 private:
-    void timerCallback() override;
     void configureGainSlider(RotaryLookAndFeel& rotaryLookAndFeel, juce::Colour voiceColour);
+    void updateControlAlpha();
 
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ButtonAttachment = juce::AudioProcessorValueTreeState::ButtonAttachment;
