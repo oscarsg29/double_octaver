@@ -12,7 +12,7 @@ namespace parameters = double_octaver::parameters;
 
 namespace
 {
-constexpr auto buildCommit = "1a6893f+";
+constexpr auto buildCommit = "875cf4f+";
 }
 
 DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOctaverAudioProcessor& p)
