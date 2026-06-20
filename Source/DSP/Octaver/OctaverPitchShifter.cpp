@@ -9,6 +9,8 @@ class OctaverPitchShifter::Impl
 public:
     McPhersonPitchShifter mcPhersonShifter;
     WangRubberBandPitchShifter rubberBandShifter;
+    juce::AudioBuffer<float> mcPhersonBuffer;
+    juce::AudioBuffer<float> rubberBandBuffer;
 };
 
 OctaverPitchShifter::OctaverPitchShifter() = default;
@@ -26,12 +28,14 @@ void OctaverPitchShifter::prepare(double sampleRate, int maximumBlockSize, int n
 
     impl->mcPhersonShifter.prepare(spec);
     impl->rubberBandShifter.prepare(spec);
-    shiftTransition.reset(sampleRate, 0.02);
+    impl->mcPhersonBuffer.setSize(numChannels, maximumBlockSize);
+    impl->rubberBandBuffer.setSize(numChannels, maximumBlockSize);
+    shiftTransition.reset(sampleRate, 0.06);
     shiftTransition.setCurrentAndTargetValue(0.0f);
-    lastOutputSamples.assign(numChannels, 0.0f);
-    shiftTransitionOffsets.assign(numChannels, 0.0f);
     needsShiftTransition = false;
-    updateAlgorithmPitch();
+    const auto semitones = Octaver::getShiftInSemitones(shift);
+    setAlgorithmPitch(Algorithm::mcPherson, semitones);
+    setAlgorithmPitch(Algorithm::rubberBand, semitones);
 }
 
 void OctaverPitchShifter::setShift(Octaver::Shift newShift) noexcept
@@ -39,9 +43,10 @@ void OctaverPitchShifter::setShift(Octaver::Shift newShift) noexcept
     if (newShift == shift)
         return;
 
+    previousAlgorithm = activeAlgorithm;
     shift = newShift;
     activeAlgorithm = getAlgorithmForShift(shift);
-    updateAlgorithmPitch();
+    updateActiveAlgorithmPitch();
     shiftTransition.setCurrentAndTargetValue(1.0f);
     shiftTransition.setTargetValue(0.0f);
     needsShiftTransition = true;
@@ -66,13 +71,29 @@ void OctaverPitchShifter::operator()(juce::AudioBuffer<float>& buffer)
     if (impl == nullptr)
         return;
 
-    if (activeAlgorithm == Algorithm::rubberBand)
-        impl->rubberBandShifter.process(buffer);
-    else
-        impl->mcPhersonShifter.process(buffer);
+    const auto numSamples = buffer.getNumSamples();
+    const auto numChannels = buffer.getNumChannels();
+
+    if (numSamples == 0)
+        return;
+
+    impl->mcPhersonBuffer.setSize(numChannels, numSamples, false, false, true);
+    impl->rubberBandBuffer.setSize(numChannels, numSamples, false, false, true);
+
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+        impl->mcPhersonBuffer.copyFrom(channel, 0, buffer, channel, 0, numSamples);
+        impl->rubberBandBuffer.copyFrom(channel, 0, buffer, channel, 0, numSamples);
+    }
+
+    impl->mcPhersonShifter.process(impl->mcPhersonBuffer);
+    impl->rubberBandShifter.process(impl->rubberBandBuffer);
+
+    auto& activeBuffer = getAlgorithmBuffer(activeAlgorithm);
+    for (int channel = 0; channel < numChannels; ++channel)
+        buffer.copyFrom(channel, 0, activeBuffer, channel, 0, numSamples);
 
     applyShiftTransition(buffer);
-    storeLastOutputSamples(buffer);
 }
 
 OctaverPitchShifter::Algorithm OctaverPitchShifter::getAlgorithmForShift(Octaver::Shift shift) noexcept
@@ -81,15 +102,20 @@ OctaverPitchShifter::Algorithm OctaverPitchShifter::getAlgorithmForShift(Octaver
                                                  : Algorithm::rubberBand;
 }
 
-void OctaverPitchShifter::updateAlgorithmPitch() noexcept
+void OctaverPitchShifter::setAlgorithmPitch(Algorithm algorithm, int semitones) noexcept
 {
     if (impl == nullptr)
         return;
 
-    const auto semitones = Octaver::getShiftInSemitones(shift);
+    if (algorithm == Algorithm::rubberBand)
+        impl->rubberBandShifter.setSemitones(static_cast<float>(semitones));
+    else
+        impl->mcPhersonShifter.setSemitones(semitones);
+}
 
-    impl->mcPhersonShifter.setSemitones(semitones);
-    impl->rubberBandShifter.setSemitones(static_cast<float>(semitones));
+void OctaverPitchShifter::updateActiveAlgorithmPitch() noexcept
+{
+    setAlgorithmPitch(activeAlgorithm, Octaver::getShiftInSemitones(shift));
 }
 
 void OctaverPitchShifter::applyShiftTransition(juce::AudioBuffer<float>& buffer) noexcept
@@ -97,42 +123,33 @@ void OctaverPitchShifter::applyShiftTransition(juce::AudioBuffer<float>& buffer)
     if (buffer.getNumSamples() == 0)
         return;
 
-    if (needsShiftTransition)
+    if (! shiftTransition.isSmoothing())
     {
-        const auto numChannels = std::min(buffer.getNumChannels(), static_cast<int>(shiftTransitionOffsets.size()));
-
-        for (int channel = 0; channel < numChannels; ++channel)
-            shiftTransitionOffsets[static_cast<size_t>(channel)] =
-                lastOutputSamples[static_cast<size_t>(channel)] - buffer.getSample(channel, 0);
-
         needsShiftTransition = false;
+        return;
     }
 
-    if (! shiftTransition.isSmoothing())
-        return;
+    auto& previousBuffer = getAlgorithmBuffer(previousAlgorithm);
 
     for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
     {
         const auto transition = shiftTransition.getNextValue();
-        const auto numChannels = std::min(buffer.getNumChannels(), static_cast<int>(shiftTransitionOffsets.size()));
 
-        for (int channel = 0; channel < numChannels; ++channel)
+        for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
         {
-            const auto offset = shiftTransitionOffsets[static_cast<size_t>(channel)] * transition;
-            buffer.setSample(channel, sample, buffer.getSample(channel, sample) + offset);
+            const auto previousSample = previousBuffer.getSample(channel, sample);
+            const auto activeSample = buffer.getSample(channel, sample);
+            buffer.setSample(channel, sample, previousSample * transition + activeSample * (1.0f - transition));
         }
     }
+
+    needsShiftTransition = shiftTransition.isSmoothing();
 }
 
-void OctaverPitchShifter::storeLastOutputSamples(const juce::AudioBuffer<float>& buffer)
+juce::AudioBuffer<float>& OctaverPitchShifter::getAlgorithmBuffer(Algorithm algorithm) noexcept
 {
-    if (buffer.getNumSamples() == 0)
-        return;
-
-    const auto numChannels = std::min(buffer.getNumChannels(), static_cast<int>(lastOutputSamples.size()));
-    const auto lastSample = buffer.getNumSamples() - 1;
-
-    for (int channel = 0; channel < numChannels; ++channel)
-        lastOutputSamples[static_cast<size_t>(channel)] = buffer.getSample(channel, lastSample);
+    jassert(impl != nullptr);
+    return algorithm == Algorithm::rubberBand ? impl->rubberBandBuffer
+                                              : impl->mcPhersonBuffer;
 }
 }
