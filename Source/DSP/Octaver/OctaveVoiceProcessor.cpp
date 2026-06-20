@@ -9,11 +9,14 @@ void OctaveVoiceProcessor::prepare(double sampleRate, int maximumBlockSize, int 
 {
     buffer.setSize(numChannels, maximumBlockSize, false, false, true);
     pitchShifter.prepare(sampleRate, maximumBlockSize, numChannels);
+    gainLinear.reset(sampleRate, 0.02);
+    gainLinear.setCurrentAndTargetValue(1.0f);
 }
 
 void OctaveVoiceProcessor::update(float gainDb, bool shouldBypass, int shiftChoiceIndex)
 {
-    gain.setOctaveGainDb(gainDb);
+    const auto clampedGainDb = std::clamp(gainDb, Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb);
+    gainLinear.setTargetValue(std::pow(10.0f, clampedGainDb / 20.0f));
     bypassed = shouldBypass;
     pitchShifter.setShiftFromChoiceIndex(shiftChoiceIndex);
 }
@@ -39,16 +42,23 @@ void OctaveVoiceProcessor::process(const juce::AudioBuffer<float>& input, int nu
     }
 
     pitchShifter(buffer);
+    applyGain(numSamples);
+}
 
-    if (buffer.getNumChannels() == 1)
+void OctaveVoiceProcessor::applyGain(int numSamples) noexcept
+{
+    if (! gainLinear.isSmoothing())
     {
-        auto view = audio::MonoPolicy::makeView(buffer);
-        dsp::transformSamples(view, gain);
+        buffer.applyGain(0, numSamples, gainLinear.getCurrentValue());
+        return;
     }
-    else if (buffer.getNumChannels() == 2)
+
+    for (int sample = 0; sample < numSamples; ++sample)
     {
-        auto view = audio::StereoPolicy::makeView(buffer);
-        dsp::transformSamples(view, gain);
+        const auto gain = gainLinear.getNextValue();
+
+        for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
+            buffer.setSample(channel, sample, buffer.getSample(channel, sample) * gain);
     }
 }
 }

@@ -152,6 +152,10 @@ void DoubleOctaverAudioProcessor::prepareToPlay(double sampleRate,
   const auto numChannels = getTotalNumOutputChannels();
 
   dryBuffer.setSize(numChannels, samplesPerBlock, false, false, true);
+  outputGainLinear.reset(sampleRate, 0.02);
+  outputGainLinear.setCurrentAndTargetValue(1.0f);
+  wetMix.reset(sampleRate, 0.02);
+  wetMix.setCurrentAndTargetValue(DryWet::DefaultDryWetPercent / DryWet::MaxDryWetPercent);
   voice1->prepare(sampleRate, samplesPerBlock, numChannels);
   voice2->prepare(sampleRate, samplesPerBlock, numChannels);
 }
@@ -209,35 +213,53 @@ void DoubleOctaverAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
   auto& octaveBuffer2 = voice2->getBuffer();
 
   if (buffer.getNumChannels() == 1) {
-    auto dryView = audio::MonoPolicy::makeView(dryBuffer);
-    auto wetView = audio::MonoPolicy::makeView(octaveBuffer);
-    auto monoView = audio::MonoPolicy::makeView(buffer);
-
     octaveBuffer.addFrom(0, 0, octaveBuffer2, 0, 0, buffer.getNumSamples());
-    dsp::combineSamples(monoView, dryView, wetView, drywet);
-    dsp::transformSamples(monoView, gain);
+    combineAndApplyOutputGain(buffer, dryBuffer, octaveBuffer, buffer.getNumSamples());
 
   } else if (buffer.getNumChannels() == 2) {
-    auto dryView = audio::StereoPolicy::makeView(dryBuffer);
-    auto wetView = audio::StereoPolicy::makeView(octaveBuffer);
-    auto stereoView = audio::StereoPolicy::makeView(buffer);
-
     octaveBuffer.addFrom(0, 0, octaveBuffer2, 0, 0, buffer.getNumSamples());
     octaveBuffer.addFrom(1, 0, octaveBuffer2, 1, 0, buffer.getNumSamples());
-    dsp::combineSamples(stereoView, dryView, wetView, drywet);
-    dsp::transformSamples(stereoView, gain);
+    combineAndApplyOutputGain(buffer, dryBuffer, octaveBuffer, buffer.getNumSamples());
   }
 }
 
 void DoubleOctaverAudioProcessor::updateParameters() {
-  gain.setGainDb(apvts.getRawParameterValue(parameters::gain)->load());
+  const auto outputGainDb = std::clamp(apvts.getRawParameterValue(parameters::gain)->load(),
+                                       Gain::MinGainDb,
+                                       Gain::MaxGainDb);
+  outputGainLinear.setTargetValue(std::pow(10.0f, outputGainDb / 20.0f));
   voice1->update(apvts.getRawParameterValue(parameters::octaveGain1)->load(),
                  apvts.getRawParameterValue(parameters::octaveBypass1)->load() > 0.5f,
                  static_cast<int>(apvts.getRawParameterValue(parameters::octaveShift1)->load()));
   voice2->update(apvts.getRawParameterValue(parameters::octaveGain2)->load(),
                  apvts.getRawParameterValue(parameters::octaveBypass2)->load() > 0.5f,
                  static_cast<int>(apvts.getRawParameterValue(parameters::octaveShift2)->load()));
-  drywet.setDryWetPercent(apvts.getRawParameterValue(parameters::dryWet)->load());
+  const auto dryWetPercent = std::clamp(apvts.getRawParameterValue(parameters::dryWet)->load(),
+                                        DryWet::MinDryWetPercent,
+                                        DryWet::MaxDryWetPercent);
+  wetMix.setTargetValue(dryWetPercent / DryWet::MaxDryWetPercent);
+}
+
+void DoubleOctaverAudioProcessor::combineAndApplyOutputGain(juce::AudioBuffer<float>& output,
+                                                            const juce::AudioBuffer<float>& dry,
+                                                            const juce::AudioBuffer<float>& wet,
+                                                            int numSamples) noexcept
+{
+  const auto numChannels = std::min({ output.getNumChannels(), dry.getNumChannels(), wet.getNumChannels() });
+
+  for (int sample = 0; sample < numSamples; ++sample)
+  {
+    const auto wetRatio = wetMix.getNextValue();
+    const auto dryRatio = 1.0f - wetRatio;
+    const auto gain = outputGainLinear.getNextValue();
+
+    for (int channel = 0; channel < numChannels; ++channel)
+    {
+      const auto mixed = dry.getSample(channel, sample) * dryRatio
+                       + wet.getSample(channel, sample) * wetRatio;
+      output.setSample(channel, sample, mixed * gain);
+    }
+  }
 }
 
 bool DoubleOctaverAudioProcessor::hasEditor() const {

@@ -117,6 +117,8 @@ constexpr int textX = 14;
 constexpr int textBottomMargin = 22;
 constexpr int textWidth = 126;
 constexpr int textHeight = 14;
+constexpr int buildTextX = 142;
+constexpr int buildTextWidth = 86;
 }
 
 namespace status

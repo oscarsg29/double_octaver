@@ -17,9 +17,11 @@ public:
     [[nodiscard]] juce::AudioBuffer<float>& getBuffer() noexcept { return buffer; }
 
 private:
+    void applyGain(int numSamples) noexcept;
+
     juce::AudioBuffer<float> buffer;
-    Octaver gain;
     OctaverPitchShifter pitchShifter;
+    juce::SmoothedValue<float> gainLinear { 1.0f };
     bool bypassed = false;
 };
 }

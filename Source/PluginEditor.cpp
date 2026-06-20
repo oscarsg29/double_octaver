@@ -10,6 +10,11 @@
 namespace gui = double_octaver::gui;
 namespace parameters = double_octaver::parameters;
 
+namespace
+{
+constexpr auto buildCommit = "1a6893f+";
+}
+
 DoubleOctaverAudioProcessorEditor::DoubleOctaverAudioProcessorEditor (DoubleOctaverAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p)
 {
@@ -234,6 +239,13 @@ void DoubleOctaverAudioProcessorEditor::drawFooter(juce::Graphics& g, bool power
                      gui::layout::editor::height - gui::layout::footer::textBottomMargin,
                      gui::layout::footer::textWidth, gui::layout::footer::textHeight,
                      juce::Justification::centredLeft, 1);
+
+    g.drawFittedText(juce::String("v") + JucePlugin_VersionString + " " + buildCommit,
+                     gui::layout::footer::buildTextX,
+                     gui::layout::editor::height - gui::layout::footer::textBottomMargin,
+                     gui::layout::footer::buildTextWidth,
+                     gui::layout::footer::textHeight,
+                     juce::Justification::centredRight, 1);
 
     const auto statusY = static_cast<float>(gui::layout::editor::height - gui::layout::status::dotBottomMargin);
     //drawStatusDot(g, { gui::layout::status::dryX, statusY }, gui::theme::cream, true, "DRY");
