@@ -1,4 +1,5 @@
 #pragma once
+#include "../rubberband/src/kissfft/kiss_fft.h"
 #include <JuceHeader.h>
 
 class McPhersonPitchShifter
@@ -6,7 +7,11 @@ class McPhersonPitchShifter
 public:
 
     McPhersonPitchShifter() = default;
-    ~McPhersonPitchShifter() = default;
+    ~McPhersonPitchShifter()
+    {
+        kiss_fft_free (fftForward);
+        kiss_fft_free (fftInverse);
+    }
 
     void prepare (juce::dsp::ProcessSpec&);
 
@@ -52,7 +57,8 @@ private:
     juce::CriticalSection lock;
 
     int fftSize;
-    std::unique_ptr<juce::dsp::FFT> fft;
+    kiss_fft_cfg fftForward { nullptr };
+    kiss_fft_cfg fftInverse { nullptr };
 
     int inputBufferLength;
     int inputBufferWritePosition;

@@ -1,6 +1,7 @@
 #include "McPhersonPitchShifter.h"
 
 #include "../rubberband/single/RubberBandSingle.cpp"
+#include "../rubberband/src/kissfft/kiss_fft.c"
 
 void McPhersonPitchShifter::prepare (juce::dsp::ProcessSpec& spec)
 {
@@ -88,7 +89,9 @@ void McPhersonPitchShifter::process (juce::AudioBuffer<float>& inBuffer)
                         inputBufferIndex = 0;
                 }
 
-                fft->perform (fftTimeDomain, fftFrequencyDomain, false);
+                kiss_fft (fftForward,
+                          reinterpret_cast<const kiss_fft_cpx*> (fftTimeDomain.getData()),
+                          reinterpret_cast<kiss_fft_cpx*> (fftFrequencyDomain.getData()));
 
                 if (paramShift.isSmoothing())
                     needToResetPhases = true;
@@ -114,7 +117,11 @@ void McPhersonPitchShifter::process (juce::AudioBuffer<float>& inBuffer)
                     fftFrequencyDomain[index] = std::polar (magnitude, newPhase);
                 }
 
-                fft->perform (fftFrequencyDomain, fftTimeDomain, true);
+                kiss_fft (fftInverse,
+                          reinterpret_cast<const kiss_fft_cpx*> (fftFrequencyDomain.getData()),
+                          reinterpret_cast<kiss_fft_cpx*> (fftTimeDomain.getData()));
+
+                const float invN = 1.0f / static_cast<float> (fftSize);
 
                 for (int index = 0; index < resampledLength; ++index)
                 {
@@ -122,8 +129,8 @@ void McPhersonPitchShifter::process (juce::AudioBuffer<float>& inBuffer)
                     int ix = (int) floorf (x);
                     float dx = x - (float) ix;
 
-                    float sample1 = fftTimeDomain[ix].real();
-                    float sample2 = fftTimeDomain[(ix + 1) % fftSize].real();
+                    float sample1 = fftTimeDomain[ix].real() * invN;
+                    float sample2 = fftTimeDomain[(ix + 1) % fftSize].real() * invN;
                     resampledOutput[index] = sample1 + dx * (sample2 - sample1);
                     resampledOutput[index] *= sqrtf (synthesisWindow[index]);
                 }
@@ -162,14 +169,17 @@ void McPhersonPitchShifter::setSemitones (int semitone)
 void McPhersonPitchShifter::updateFftSize (int inNumChannels)
 {
     fftSize = 512;
-    fft = std::make_unique<juce::dsp::FFT> (static_cast<int> (log2 (fftSize)));
+    kiss_fft_free (fftForward);
+    kiss_fft_free (fftInverse);
+    fftForward = kiss_fft_alloc (fftSize, 0, nullptr, nullptr);
+    fftInverse = kiss_fft_alloc (fftSize, 1, nullptr, nullptr);
 
     inputBufferLength = fftSize;
     inputBufferWritePosition = 0;
     inputBuffer.clear();
     inputBuffer.setSize (inNumChannels, inputBufferLength);
 
-    float maxRatio = getScaleSemitone (-12.0f);
+    float maxRatio = getScaleSemitone (-24.0f);
     outputBufferLength = (int) floorf ((float) fftSize / maxRatio);
     outputBufferWritePosition = 0;
     outputBufferReadPosition = 0;
