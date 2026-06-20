@@ -48,7 +48,7 @@ class Octaver {
 
     [[nodiscard]] static bool usesMcPhersonAlgorithm(Shift shift) noexcept
     {
-        return shift == Shift::oneDown;
+        return shift == Shift::twoDown || shift == Shift::oneDown;
     }
 
     [[nodiscard]] static int getShiftInSemitones(Shift shift) noexcept
