@@ -26,10 +26,15 @@ private:
     [[nodiscard]] static Algorithm getAlgorithmForShift(Octaver::Shift shift) noexcept;
 
     void updateAlgorithmPitch() noexcept;
-    void resetActiveAlgorithm();
+    void applyShiftTransition(juce::AudioBuffer<float>& buffer) noexcept;
+    void storeLastOutputSamples(const juce::AudioBuffer<float>& buffer);
 
     Octaver::Shift shift { Octaver::Shift::oneDown };
     Algorithm activeAlgorithm { getAlgorithmForShift(shift) };
+    juce::SmoothedValue<float> shiftTransition { 0.0f };
+    std::vector<float> lastOutputSamples;
+    std::vector<float> shiftTransitionOffsets;
+    bool needsShiftTransition = false;
 
     class Impl;
     std::unique_ptr<Impl> impl;

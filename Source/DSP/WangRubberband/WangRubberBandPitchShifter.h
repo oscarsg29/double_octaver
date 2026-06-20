@@ -12,8 +12,7 @@ public:
 
     void prepare (juce::dsp::ProcessSpec& spec, bool dryCompensationDelay = false, bool minLatency = false)
     {
-        rubberband = std::make_unique<RubberBand::RubberBandStretcher> (spec.sampleRate, spec.numChannels, RubberBand::RubberBandStretcher::Option::OptionProcessRealTime + RubberBand::RubberBandStretcher::Option::OptionPitchHighConsistency +
-            RubberBand::RubberBandStretcher::Option::OptionSmoothingOff , 1.0, 1.0);
+        rubberband = std::make_unique<RubberBand::RubberBandStretcher> (spec.sampleRate, spec.numChannels, RubberBand::RubberBandStretcher::Option::OptionProcessRealTime + RubberBand::RubberBandStretcher::Option::OptionPitchHighConsistency, 1.0, 1.0);
 
         initLatency = (int) rubberband->getLatency();
         maxSamples = 256;
@@ -35,7 +34,7 @@ public:
 
         timeSmoothing.reset (spec.sampleRate, 0.05);
         mixSmoothing.reset (spec.sampleRate, 0.05);
-        pitchSmoothing.reset (spec.sampleRate, 0.1);
+        pitchSmoothing.reset (spec.sampleRate, 0.2);
 
         if (minLatency)
         {

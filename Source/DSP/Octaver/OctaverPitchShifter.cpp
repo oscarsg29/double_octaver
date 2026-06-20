@@ -26,6 +26,11 @@ void OctaverPitchShifter::prepare(double sampleRate, int maximumBlockSize, int n
 
     impl->mcPhersonShifter.prepare(spec);
     impl->rubberBandShifter.prepare(spec);
+    shiftTransition.reset(sampleRate, 0.02);
+    shiftTransition.setCurrentAndTargetValue(0.0f);
+    lastOutputSamples.assign(numChannels, 0.0f);
+    shiftTransitionOffsets.assign(numChannels, 0.0f);
+    needsShiftTransition = false;
     updateAlgorithmPitch();
 }
 
@@ -37,7 +42,9 @@ void OctaverPitchShifter::setShift(Octaver::Shift newShift) noexcept
     shift = newShift;
     activeAlgorithm = getAlgorithmForShift(shift);
     updateAlgorithmPitch();
-    resetActiveAlgorithm();
+    shiftTransition.setCurrentAndTargetValue(1.0f);
+    shiftTransition.setTargetValue(0.0f);
+    needsShiftTransition = true;
 }
 
 void OctaverPitchShifter::setShiftFromChoiceIndex(int choiceIndex) noexcept
@@ -63,6 +70,9 @@ void OctaverPitchShifter::operator()(juce::AudioBuffer<float>& buffer)
         impl->rubberBandShifter.process(buffer);
     else
         impl->mcPhersonShifter.process(buffer);
+
+    applyShiftTransition(buffer);
+    storeLastOutputSamples(buffer);
 }
 
 OctaverPitchShifter::Algorithm OctaverPitchShifter::getAlgorithmForShift(Octaver::Shift shift) noexcept
@@ -82,14 +92,47 @@ void OctaverPitchShifter::updateAlgorithmPitch() noexcept
     impl->rubberBandShifter.setSemitones(static_cast<float>(semitones));
 }
 
-void OctaverPitchShifter::resetActiveAlgorithm()
+void OctaverPitchShifter::applyShiftTransition(juce::AudioBuffer<float>& buffer) noexcept
 {
-    if (impl == nullptr)
+    if (buffer.getNumSamples() == 0)
         return;
 
-    if (activeAlgorithm == Algorithm::rubberBand)
-        impl->rubberBandShifter.reset();
-    else
-        impl->mcPhersonShifter.reset();
+    if (needsShiftTransition)
+    {
+        const auto numChannels = std::min(buffer.getNumChannels(), static_cast<int>(shiftTransitionOffsets.size()));
+
+        for (int channel = 0; channel < numChannels; ++channel)
+            shiftTransitionOffsets[static_cast<size_t>(channel)] =
+                lastOutputSamples[static_cast<size_t>(channel)] - buffer.getSample(channel, 0);
+
+        needsShiftTransition = false;
+    }
+
+    if (! shiftTransition.isSmoothing())
+        return;
+
+    for (int sample = 0; sample < buffer.getNumSamples(); ++sample)
+    {
+        const auto transition = shiftTransition.getNextValue();
+        const auto numChannels = std::min(buffer.getNumChannels(), static_cast<int>(shiftTransitionOffsets.size()));
+
+        for (int channel = 0; channel < numChannels; ++channel)
+        {
+            const auto offset = shiftTransitionOffsets[static_cast<size_t>(channel)] * transition;
+            buffer.setSample(channel, sample, buffer.getSample(channel, sample) + offset);
+        }
+    }
+}
+
+void OctaverPitchShifter::storeLastOutputSamples(const juce::AudioBuffer<float>& buffer)
+{
+    if (buffer.getNumSamples() == 0)
+        return;
+
+    const auto numChannels = std::min(buffer.getNumChannels(), static_cast<int>(lastOutputSamples.size()));
+    const auto lastSample = buffer.getNumSamples() - 1;
+
+    for (int channel = 0; channel < numChannels; ++channel)
+        lastOutputSamples[static_cast<size_t>(channel)] = buffer.getSample(channel, lastSample);
 }
 }
