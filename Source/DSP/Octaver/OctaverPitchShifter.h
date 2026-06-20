@@ -12,6 +12,7 @@ public:
     ~OctaverPitchShifter();
 
     void prepare(double sampleRate, int maximumBlockSize, int numChannels);
+    void reset() noexcept;
     void setShift(Octaver::Shift shift) noexcept;
     void setShiftFromChoiceIndex(int choiceIndex) noexcept;
     void operator()(juce::AudioBuffer<float>& buffer);

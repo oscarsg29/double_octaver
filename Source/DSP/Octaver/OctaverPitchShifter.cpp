@@ -38,6 +38,17 @@ void OctaverPitchShifter::prepare(double sampleRate, int maximumBlockSize, int n
     setAlgorithmPitch(Algorithm::rubberBand, semitones);
 }
 
+void OctaverPitchShifter::reset() noexcept
+{
+    if (impl == nullptr)
+        return;
+
+    impl->mcPhersonShifter.reset();
+    impl->rubberBandShifter.reset();
+    shiftTransition.setCurrentAndTargetValue(0.0f);
+    needsShiftTransition = false;
+}
+
 void OctaverPitchShifter::setShift(Octaver::Shift newShift) noexcept
 {
     if (newShift == shift)

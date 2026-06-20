@@ -156,6 +156,12 @@ void DoubleOctaverAudioProcessor::prepareToPlay(double sampleRate,
   outputGainLinear.setCurrentAndTargetValue(1.0f);
   wetMix.reset(sampleRate, 0.02);
   wetMix.setCurrentAndTargetValue(DryWet::DefaultDryWetPercent / DryWet::MaxDryWetPercent);
+  powerMix.reset(sampleRate, 0.03);
+  powerMix.setCurrentAndTargetValue(1.0f);
+  transportWetFade.reset(sampleRate, 0.05);
+  transportWetFade.setCurrentAndTargetValue(1.0f);
+  lastPlayheadSamplePosition.reset();
+  wasPlaying = false;
   voice1->prepare(sampleRate, samplesPerBlock, numChannels);
   voice2->prepare(sampleRate, samplesPerBlock, numChannels);
 }
@@ -188,10 +194,8 @@ void DoubleOctaverAudioProcessor::processBlock(juce::AudioBuffer<float> &buffer,
                                              juce::MidiBuffer &midiMessages) {
   juce::ignoreUnused(midiMessages);
 
-  if (apvts.getRawParameterValue(parameters::power)->load() < 0.5f)
-    return;
-
   updateParameters();
+  updateTransportDiscontinuity(buffer.getNumSamples());
 
   if (buffer.getNumChannels() == 0)
     return;
@@ -238,6 +242,57 @@ void DoubleOctaverAudioProcessor::updateParameters() {
                                         DryWet::MinDryWetPercent,
                                         DryWet::MaxDryWetPercent);
   wetMix.setTargetValue(dryWetPercent / DryWet::MaxDryWetPercent);
+
+  powerMix.setTargetValue(apvts.getRawParameterValue(parameters::power)->load() >= 0.5f ? 1.0f : 0.0f);
+}
+
+void DoubleOctaverAudioProcessor::updateTransportDiscontinuity(int numSamples)
+{
+  auto* playHead = getPlayHead();
+  if (playHead == nullptr)
+  {
+    lastPlayheadSamplePosition.reset();
+    wasPlaying = false;
+    return;
+  }
+
+  const auto position = playHead->getPosition();
+  const auto timeInSamples = position->getTimeInSamples();
+  const auto isPlaying = position->getIsPlaying();
+
+  if (! timeInSamples.hasValue())
+  {
+    lastPlayheadSamplePosition.reset();
+    wasPlaying = isPlaying;
+    return;
+  }
+
+  const auto currentSample = *timeInSamples;
+  auto shouldReset = false;
+
+  if (lastPlayheadSamplePosition.hasValue())
+  {
+    const auto expectedNextSample = *lastPlayheadSamplePosition + numSamples;
+    constexpr int64_t toleranceSamples = 4096;
+    shouldReset = std::llabs(currentSample - expectedNextSample) > toleranceSamples;
+  }
+
+  if (isPlaying && ! wasPlaying)
+    shouldReset = true;
+
+  if (shouldReset)
+    resetEffectPathForTransportJump();
+
+  lastPlayheadSamplePosition = currentSample;
+  wasPlaying = isPlaying;
+}
+
+void DoubleOctaverAudioProcessor::resetEffectPathForTransportJump() noexcept
+{
+  voice1->reset();
+  voice2->reset();
+  transportWetFade.setCurrentAndTargetValue(0.0f);
+  transportWetFade.setTargetValue(1.0f);
 }
 
 void DoubleOctaverAudioProcessor::combineAndApplyOutputGain(juce::AudioBuffer<float>& output,
@@ -249,15 +304,18 @@ void DoubleOctaverAudioProcessor::combineAndApplyOutputGain(juce::AudioBuffer<fl
 
   for (int sample = 0; sample < numSamples; ++sample)
   {
-    const auto wetRatio = wetMix.getNextValue();
+    const auto wetRatio = wetMix.getNextValue() * transportWetFade.getNextValue();
     const auto dryRatio = 1.0f - wetRatio;
     const auto gain = outputGainLinear.getNextValue();
+    const auto power = powerMix.getNextValue();
 
     for (int channel = 0; channel < numChannels; ++channel)
     {
       const auto mixed = dry.getSample(channel, sample) * dryRatio
                        + wet.getSample(channel, sample) * wetRatio;
-      output.setSample(channel, sample, mixed * gain);
+      const auto processed = mixed * gain;
+      output.setSample(channel, sample, dry.getSample(channel, sample) * (1.0f - power)
+                                      + processed * power);
     }
   }
 }

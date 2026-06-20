@@ -53,6 +53,8 @@ class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
   private:
     static juce::AudioProcessorValueTreeState::ParameterLayout createParameters();
     void updateParameters();
+    void updateTransportDiscontinuity(int numSamples);
+    void resetEffectPathForTransportJump() noexcept;
     void combineAndApplyOutputGain(juce::AudioBuffer<float>& output,
                                    const juce::AudioBuffer<float>& dry,
                                    const juce::AudioBuffer<float>& wet,
@@ -65,6 +67,10 @@ class DoubleOctaverAudioProcessor : public juce::AudioProcessor {
     std::unique_ptr<double_octaver::pitch::OctaveVoiceProcessor> voice2;
     juce::SmoothedValue<float> outputGainLinear { 1.0f };
     juce::SmoothedValue<float> wetMix { DryWet::DefaultDryWetPercent / DryWet::MaxDryWetPercent };
+    juce::SmoothedValue<float> powerMix { 1.0f };
+    juce::SmoothedValue<float> transportWetFade { 1.0f };
+    juce::Optional<int64_t> lastPlayheadSamplePosition;
+    bool wasPlaying = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DoubleOctaverAudioProcessor)
 };
