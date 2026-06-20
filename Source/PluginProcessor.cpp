@@ -6,6 +6,23 @@
 namespace parameters = double_octaver::parameters;
 namespace pitch = double_octaver::pitch;
 
+namespace
+{
+juce::AudioParameterFloatAttributes makeGainParameterAttributes(float minimumGainDb)
+{
+  return juce::AudioParameterFloatAttributes()
+      .withStringFromValueFunction([minimumGainDb](float value, int maximumStringLength)
+      {
+        juce::String text = value <= minimumGainDb ? "-inf" : juce::String(value, 1);
+        return maximumStringLength > 0 ? text.substring(0, maximumStringLength) : text;
+      })
+      .withValueFromStringFunction([](const juce::String& text)
+      {
+        return text.getFloatValue();
+      });
+}
+}
+
 DoubleOctaverAudioProcessor::DoubleOctaverAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
     : AudioProcessor(
@@ -45,7 +62,8 @@ DoubleOctaverAudioProcessor::createParameters() {
   parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID(parameters::gain, 1), parameters::gain,
       juce::NormalisableRange<float>(Gain::MinGainDb, Gain::MaxGainDb, 0.1f, gainKnobSkew),
-      Gain::UnityGainDb));
+      Gain::UnityGainDb,
+      makeGainParameterAttributes(Gain::MinGainDb)));
 
   parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID(parameters::dryWet, 1), parameters::dryWet, DryWet::MinDryWetPercent,
@@ -54,7 +72,8 @@ DoubleOctaverAudioProcessor::createParameters() {
   parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID(parameters::octaveGain1, 1), parameters::octaveGain1,
       juce::NormalisableRange<float>(Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb, 0.1f, gainKnobSkew),
-      Octaver::DefaultOctaveGainDb));
+      Octaver::DefaultOctaveGainDb,
+      makeGainParameterAttributes(Octaver::MinOctaveGainDb)));
 
   parameterLayout.add(std::make_unique<juce::AudioParameterChoice>(
       juce::ParameterID(parameters::octaveShift1, 1), parameters::octaveShift1,
@@ -66,7 +85,8 @@ DoubleOctaverAudioProcessor::createParameters() {
   parameterLayout.add(std::make_unique<juce::AudioParameterFloat>(
       juce::ParameterID(parameters::octaveGain2, 1), parameters::octaveGain2,
       juce::NormalisableRange<float>(Octaver::MinOctaveGainDb, Octaver::MaxOctaveGainDb, 0.1f, gainKnobSkew),
-      Octaver::DefaultOctaveGainDb));
+      Octaver::DefaultOctaveGainDb,
+      makeGainParameterAttributes(Octaver::MinOctaveGainDb)));
 
   parameterLayout.add(std::make_unique<juce::AudioParameterChoice>(
       juce::ParameterID(parameters::octaveShift2, 1), parameters::octaveShift2,
