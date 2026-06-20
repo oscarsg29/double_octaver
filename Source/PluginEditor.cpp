@@ -236,10 +236,10 @@ void DoubleOctaverAudioProcessorEditor::drawFooter(juce::Graphics& g, bool power
                      juce::Justification::centredLeft, 1);
 
     const auto statusY = static_cast<float>(gui::layout::editor::height - gui::layout::status::dotBottomMargin);
-    drawStatusDot(g, { gui::layout::status::dryX, statusY }, gui::theme::cream, true, "DRY");
+    //drawStatusDot(g, { gui::layout::status::dryX, statusY }, gui::theme::cream, true, "DRY");
     drawStatusDot(g, { gui::layout::status::voice1X, statusY }, gui::theme::accent, voice1On, "V1");
     drawStatusDot(g, { gui::layout::status::voice2X, statusY }, gui::theme::blue, voice2On, "V2");
-    drawStatusDot(g, { gui::layout::status::outputX, statusY }, gui::theme::green, powerOn, "OUT");
+    //drawStatusDot(g, { gui::layout::status::outputX, statusY }, gui::theme::green, powerOn, "OUT");
 }
 
 void DoubleOctaverAudioProcessorEditor::resized()

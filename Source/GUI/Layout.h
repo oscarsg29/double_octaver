@@ -121,10 +121,8 @@ constexpr int textHeight = 14;
 
 namespace status
 {
-constexpr float dryX = 180.0f;
-constexpr float voice1X = 217.0f;
-constexpr float voice2X = 250.0f;
-constexpr float outputX = 283.0f;
+constexpr float voice1X = 250.0f;
+constexpr float voice2X = 283.0f;
 constexpr int dotBottomMargin = 15;
 }
 }
